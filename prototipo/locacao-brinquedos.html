@@ -1,0 +1,969 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Gestão de Locação de Brinquedos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EEF1F6;--surface:#FFFFFF;--ink:#16203A;--muted:#58637C;--line:#D6DCE7;
+  --blue:#2350D8;--yellow:#FFC72C;--yellow-ink:#16203A;--green:#12804F;--red:#C8333D;--orange:#A85A06;
+  --soft-blue:#E2E9FD;--soft-green:#DBF2E6;--soft-red:#FBE2E4;--soft-yellow:#FFF1C7;--soft-grey:#E6E9EF;
+  --shade:rgba(10,16,35,.45);
+  --display:'Bricolage Grotesque','Trebuchet MS',system-ui,sans-serif;
+  --body:'Figtree',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0E1322;--surface:#181F33;--ink:#E7EBF5;--muted:#9BA5BD;--line:#2A3350;
+    --blue:#7196FF;--yellow:#FFCF45;--yellow-ink:#16203A;--green:#43C98B;--red:#FF727B;--orange:#F2A650;
+    --soft-blue:#1F2B52;--soft-green:#15392A;--soft-red:#43202A;--soft-yellow:#3A3118;--soft-grey:#252D44;
+    --shade:rgba(0,0,0,.6);color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0E1322;--surface:#181F33;--ink:#E7EBF5;--muted:#9BA5BD;--line:#2A3350;
+  --blue:#7196FF;--yellow:#FFCF45;--yellow-ink:#16203A;--green:#43C98B;--red:#FF727B;--orange:#F2A650;
+  --soft-blue:#1F2B52;--soft-green:#15392A;--soft-red:#43202A;--soft-yellow:#3A3118;--soft-grey:#252D44;
+  --shade:rgba(0,0,0,.6);color-scheme:dark;
+}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.45;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+h1,h2,h3{font-family:var(--display);margin:0;line-height:1.15}
+.muted{color:var(--muted)}
+small{display:block;color:var(--muted);font-size:.85rem}
+
+/* Topo com borda de inflável */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--yellow);color:var(--yellow-ink);padding:14px 18px 12px}
+.top::after{content:"";position:absolute;left:0;right:0;bottom:-11px;height:12px;pointer-events:none;
+  background:radial-gradient(circle at 12px 0,var(--yellow) 11px,transparent 11.5px) 0 0/24px 12px repeat-x}
+.top-in{max-width:760px;margin:0 auto;display:flex;align-items:center;gap:12px}
+.brand{flex:1;min-width:0}
+.brand b{display:block;font-family:var(--display);font-weight:800;font-size:clamp(1.35rem,5.4vw,1.85rem);letter-spacing:-.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.brand span{font-size:.85rem;font-weight:600;opacity:.8}
+.icon-btn{width:44px;height:44px;border-radius:50%;border:2px solid var(--yellow-ink);background:transparent;display:grid;place-items:center;color:var(--yellow-ink)}
+.icon-btn svg{width:22px;height:22px}
+
+main{max-width:760px;margin:0 auto;padding:30px 16px 120px}
+section{margin-bottom:26px}
+.hello{font-size:clamp(1.5rem,6vw,2rem);font-weight:800;margin:4px 0 20px;letter-spacing:-.02em}
+.sh{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+.sh h2{font-size:1.2rem;font-weight:800}
+
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px}
+button.card{display:block;width:100%;text-align:left;margin:0 0 8px}
+button.card:hover{border-color:var(--blue)}
+.empty{color:var(--muted);background:transparent;border:1.5px dashed var(--line);border-radius:16px;padding:16px;margin:0}
+
+.btn{border:0;border-radius:999px;padding:11px 18px;min-height:44px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;gap:6px;text-decoration:none;line-height:1.1}
+.btn.sm{min-height:38px;padding:8px 14px;font-size:.9rem}
+.primary{background:var(--blue);color:#fff}
+.yellow{background:var(--yellow);color:var(--yellow-ink)}
+.ghost{background:transparent;border:1.5px solid var(--line);color:var(--ink)}
+.danger{color:var(--red)}
+.green{background:var(--green);color:#fff}
+.armed{background:var(--red)!important;color:#fff!important;border-color:var(--red)!important}
+.lnk{background:none;border:0;padding:0;color:var(--blue);font-weight:700;text-decoration:underline;text-underline-offset:3px}
+
+.ev{display:grid;grid-template-columns:64px 1fr;gap:12px;align-items:start}
+.ev time{font-family:var(--display);font-weight:800;font-size:1.3rem;line-height:1.1}
+.ev strong{font-size:1.02rem}
+.kind{display:inline-block;font-size:.75rem;font-weight:700;border-radius:999px;padding:2px 9px;margin-bottom:4px}
+.kind.Entrega{background:var(--soft-blue);color:var(--blue)}
+.kind.Retirada{background:var(--soft-yellow);color:var(--orange)}
+
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:12px}
+.stat span{font-size:.82rem;color:var(--muted);font-weight:600}
+.stat b{display:block;font-family:var(--display);font-weight:800;font-size:clamp(.98rem,4vw,1.25rem);margin-top:2px;white-space:nowrap}
+.stat.in b{color:var(--green)} .stat.out b{color:var(--red)}
+.row{display:flex;justify-content:space-between;align-items:center;gap:10px}
+
+.st{display:inline-block;font-size:.75rem;font-weight:700;padding:3px 10px;border-radius:999px;white-space:nowrap}
+.st-orc{background:var(--soft-grey);color:var(--muted)}
+.st-conf{background:var(--soft-blue);color:var(--blue)}
+.st-ent{background:var(--soft-yellow);color:var(--orange)}
+.st-ok{background:var(--soft-green);color:var(--green)}
+.st-canc{background:var(--soft-red);color:var(--red)}
+.due{font-size:.8rem;font-weight:700;color:var(--red)}
+.paid{font-size:.8rem;font-weight:700;color:var(--green)}
+
+.loc{display:grid!important;grid-template-columns:54px 1fr;gap:12px}
+.dt{text-align:center;background:var(--soft-blue);border-radius:12px;padding:6px 0;color:var(--blue);align-self:start}
+.dt b{display:block;font-family:var(--display);font-size:1.4rem;font-weight:800;line-height:1}
+.dt span{font-size:.75rem;font-weight:700}
+
+.chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:12px;scrollbar-width:none}
+.chip{border:1.5px solid var(--line);background:var(--surface);border-radius:999px;padding:7px 14px;font-weight:600;font-size:.9rem;white-space:nowrap}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.search{width:100%;margin-bottom:12px}
+
+/* Agenda */
+.mnav{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.mnav h2{font-size:1.35rem;font-weight:800;text-transform:capitalize}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
+.cal .wd{text-align:center;font-size:.75rem;font-weight:700;color:var(--muted);padding-bottom:2px}
+.day{aspect-ratio:1/1.05;border-radius:12px;background:var(--surface);border:1px solid var(--line);padding:5px;display:flex;flex-direction:column;justify-content:space-between;align-items:flex-start;min-width:0}
+.day .n{font-weight:700;font-size:.92rem}
+.day.today .n{color:var(--blue);font-weight:800}
+.day.busy{background:var(--soft-yellow);border-color:transparent}
+.day.sel{outline:2.5px solid var(--blue);outline-offset:0}
+.day .c{align-self:flex-end;background:var(--ink);color:var(--bg);font-size:.7rem;font-weight:800;border-radius:999px;min-width:20px;height:20px;display:grid;place-items:center;padding:0 5px}
+.blank{visibility:hidden}
+.av{display:grid;grid-template-columns:1fr auto;gap:4px 10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+.av:last-child{border-bottom:0}
+.bar{grid-column:1/-1;height:8px;border-radius:99px;background:var(--soft-grey);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--green);border-radius:99px}
+.bar i.low{background:var(--orange)} .bar i.none{background:var(--red)}
+
+/* Cadastros */
+.seg{display:grid;grid-template-columns:1fr 1fr;background:var(--soft-grey);border-radius:999px;padding:4px;margin-bottom:14px}
+.seg button{border:0;background:transparent;border-radius:999px;padding:9px;font-weight:700;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink)}
+.tag{font-size:.75rem;font-weight:700;border-radius:999px;padding:2px 8px;background:var(--soft-grey);color:var(--muted)}
+
+/* Caixa */
+.cx{display:grid;grid-template-columns:1fr auto;gap:2px 10px;padding:12px 0;border-bottom:1px solid var(--line);background:none;border-left:0;border-right:0;border-top:0;width:100%;text-align:left}
+.cx b.in{color:var(--green)} .cx b.out{color:var(--red)}
+.dgrp{font-weight:700;font-size:.85rem;color:var(--muted);margin:14px 0 0}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}
+
+/* Navegação inferior */
+.tabs{position:fixed;left:0;right:0;bottom:0;z-index:30;background:var(--surface);border-top:1px solid var(--line);padding:6px 6px calc(6px + env(safe-area-inset-bottom,0px));display:grid;grid-template-columns:repeat(5,1fr)}
+.tabs button{border:0;background:none;display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 2px;border-radius:14px;font-size:.72rem;font-weight:700;color:var(--muted)}
+.tabs svg{width:24px;height:24px}
+.tabs button[aria-current="page"]{color:var(--blue);background:var(--soft-blue)}
+@media (min-width:760px){.tabs{max-width:560px;margin:0 auto;left:50%;transform:translateX(-50%);bottom:12px;border:1px solid var(--line);border-radius:22px;padding:6px}}
+
+/* Folha (modal) */
+.sheet{position:fixed;inset:0;z-index:50;display:flex;align-items:flex-end;justify-content:center}
+.sheet[hidden]{display:none}
+.sheet-bg{position:absolute;inset:0;background:var(--shade)}
+.panel{position:relative;background:var(--bg);width:100%;max-width:640px;max-height:calc(100% - 20px - env(safe-area-inset-top,0px));overflow:auto;border-radius:22px 22px 0 0;padding:0 16px calc(28px + env(safe-area-inset-bottom,0px));animation:up .22s ease-out}
+.panel>header{position:sticky;top:0;z-index:2;background:var(--bg);display:flex;align-items:center;justify-content:space-between;gap:10px;padding:16px 0 12px}
+.panel>header h2{font-size:1.3rem;font-weight:800}
+.x{width:40px;height:40px;border-radius:50%;border:1.5px solid var(--line);background:var(--surface);font-size:1.4rem;line-height:1;flex:none}
+@keyframes up{from{transform:translateY(24px);opacity:.3}to{transform:none;opacity:1}}
+@media (min-width:700px){.sheet{align-items:center}.panel{border-radius:22px;max-height:88vh}}
+@media (prefers-reduced-motion:reduce){.panel{animation:none}}
+
+/* Formulários */
+.f{display:flex;flex-direction:column;gap:5px;margin-bottom:12px;min-width:0}
+.f>span{font-size:.86rem;font-weight:600;color:var(--muted)}
+.f i{color:var(--red);font-style:normal}
+input,select,textarea{font:inherit;font-size:16px;padding:11px 12px;border-radius:12px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);width:100%;min-width:0}
+textarea{min-height:84px;resize:vertical}
+input:focus,select:focus,textarea:focus{border-color:var(--blue);outline:none;box-shadow:0 0 0 3px var(--soft-blue)}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+@media (max-width:430px){.g3{grid-template-columns:1fr 1fr}.g3>:first-child{grid-column:1/-1}}
+fieldset{border:0;padding:0;margin:14px 0 6px;min-width:0}
+legend{font-family:var(--display);font-weight:800;font-size:1.05rem;margin-bottom:10px;padding:0}
+.check{display:flex;gap:10px;align-items:center;margin:4px 0 12px;font-weight:600}
+.check input{width:22px;height:22px;accent-color:var(--blue);flex:none}
+.acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+.acts .btn{flex:1 1 auto}
+.warn{background:var(--soft-red);color:var(--red);border-radius:12px;padding:12px;font-weight:600;margin:10px 0}
+.note{background:var(--soft-yellow);color:var(--ink);border-radius:12px;padding:12px;margin:10px 0;font-size:.92rem}
+.it{display:grid;grid-template-columns:1fr auto;gap:8px 10px;align-items:center;padding:12px;background:var(--surface);border:1.5px solid var(--line);border-radius:14px;margin-bottom:8px}
+.it.on{border-color:var(--blue)}
+.it .lv{color:var(--muted);font-size:.82rem}
+.it .lv.bad{color:var(--red);font-weight:700}
+.it label{display:flex;align-items:center;gap:8px;font-size:.85rem;color:var(--muted);grid-column:1/-1}
+.it label input{max-width:130px}
+.step{display:flex;align-items:center;gap:6px}
+.step button{width:38px;height:38px;border-radius:50%;border:1.5px solid var(--line);background:var(--bg);font-size:1.25rem;font-weight:700;line-height:1}
+.step input{width:54px;text-align:center;padding:8px 4px}
+.sum{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin:10px 0}
+.sum .row{padding:3px 0}
+.sum .big{font-family:var(--display);font-weight:800;font-size:1.3rem}
+.tipo{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.tipo label{border:1.5px solid var(--line);border-radius:14px;padding:12px;text-align:center;font-weight:700;background:var(--surface)}
+.tipo input{position:absolute;opacity:0;pointer-events:none}
+.tipo label:has(input:checked){border-color:var(--ink);background:var(--ink);color:var(--bg)}
+.tipo label:has(input:focus-visible){outline:3px solid var(--blue);outline-offset:2px}
+
+/* Detalhe da locação */
+.blk{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:10px}
+.blk h3{font-size:.95rem;font-weight:800;margin-bottom:6px}
+.blk p{margin:0 0 6px}
+.lines{width:100%;border-collapse:collapse;font-size:.95rem}
+.lines td{padding:5px 0;vertical-align:top}
+.lines td:last-child{text-align:right;white-space:nowrap}
+.lines tr.t td{border-top:1px solid var(--line);padding-top:8px;font-weight:700}
+
+/* Documento */
+.paper{background:#fff;color:#111;border-radius:12px;padding:24px 20px;border:1px solid var(--line)}
+.doc{font-family:Georgia,'Times New Roman',serif;font-size:14px;line-height:1.62;color:#111}
+.doc h1{font-family:Georgia,'Times New Roman',serif;font-size:16px;text-align:center;margin:0 0 2px;letter-spacing:.03em}
+.doc .sub{text-align:center;margin:0 0 18px;font-size:13px}
+.doc p{margin:0 0 10px;text-align:justify}
+.doc table{width:100%;border-collapse:collapse;margin:6px 0 12px;font-size:13px}
+.doc th,.doc td{border:1px solid #999;padding:4px 7px;text-align:left}
+.doc td.r{text-align:right;white-space:nowrap}
+.doc ol{padding-left:22px;margin:0 0 10px}
+.doc li{margin-bottom:6px;text-align:justify}
+.sigs{display:grid;grid-template-columns:1fr 1fr;gap:26px 24px;margin-top:30px}
+.sigs div{text-align:center;font-size:12.5px;line-height:1.35}
+.sigs .ln{border-top:1px solid #111;padding-top:4px;margin-top:2px}
+.sigs img{height:62px;max-width:100%;display:block;margin:0 auto -4px;object-fit:contain}
+.sigs .sp{height:58px}
+.sigs em{display:block;font-size:10.5px;color:#555;font-style:normal}
+.pb{margin-top:36px;border-top:1px dashed #bbb;padding-top:28px}
+.docbar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+.docbar .btn{flex:1 1 auto}
+.pad{background:#fff;border-radius:14px;border:2px dashed var(--line);touch-action:none;width:100%;height:220px;display:block}
+
+#toast{position:fixed;left:50%;bottom:calc(92px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);background:var(--ink);color:var(--bg);padding:12px 18px;border-radius:14px;font-weight:600;opacity:0;pointer-events:none;transition:.2s;z-index:80;max-width:calc(100% - 32px);text-align:center}
+#toast.on{opacity:1;transform:translate(-50%,0)}
+#print{display:none}
+.onb ol{margin:8px 0 0;padding-left:22px}
+.onb li{margin-bottom:6px}
+.srv{font-size:.85rem;color:var(--muted);margin-top:10px}
+
+@media print{
+  :root{padding:0}
+  body{background:#fff}
+  body>*:not(#print){display:none!important}
+  #print{display:block}
+  .pb{border:0;margin-top:0;padding-top:0;break-before:page;page-break-before:always}
+  @page{margin:18mm 16mm}
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="top-in">
+    <div class="brand"><b id="empresa">Minha locadora</b><span>Painel do locador</span></div>
+    <button class="icon-btn" data-a="tab" data-id="ajustes" aria-label="Ajustes">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+    </button>
+  </div>
+</header>
+
+<main id="main"></main>
+
+<nav class="tabs" aria-label="Seções">
+  <button data-a="tab" data-id="inicio"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Início</button>
+  <button data-a="tab" data-id="agenda"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16.5" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/></svg>Agenda</button>
+  <button data-a="tab" data-id="locacoes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v2.5a2.5 2.5 0 0 0 0 5V17a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-2.5a2.5 2.5 0 0 0 0-5z"/><path d="M14 5v14" stroke-dasharray="2 2.5"/></svg>Locações</button>
+  <button data-a="tab" data-id="cadastros"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 3 7.5v9L12 21l9-4.5v-9z"/><path d="m3 7.5 9 4.5 9-4.5M12 12v9"/></svg>Cadastros</button>
+  <button data-a="tab" data-id="caixa"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h14a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a1 1 0 0 1-1-1z"/><path d="M4 7V6a2 2 0 0 1 2-2h10v3"/><circle cx="16" cy="13.5" r="1.3"/></svg>Caixa</button>
+</nav>
+
+<div id="sheet" class="sheet" hidden></div>
+<div id="toast" role="status" aria-live="polite"></div>
+<div id="print"></div>
+<input type="file" id="fileImport" accept="application/json,.json" hidden>
+
+<script>
+/* ============ utilidades ============ */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8);
+const brl=n=>(+n||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+const nfmt=n=>(+n||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+const numv=v=>{let s=String(v??'').trim().replace(/[R$\s]/g,'');if(s.includes(','))s=s.replace(/\./g,'').replace(',','.');const n=parseFloat(s);return isNaN(n)?0:n};
+const pad2=n=>String(n).padStart(2,'0');
+const isoOf=d=>d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate());
+const hoje=()=>isoOf(new Date());
+const agoraHM=()=>{const d=new Date();return pad2(d.getHours())+':'+pad2(d.getMinutes())};
+const toD=iso=>{const [y,m,d]=iso.split('-').map(Number);return new Date(y,m-1,d)};
+const addDays=(iso,n)=>{const d=toD(iso);d.setDate(d.getDate()+n);return isoOf(d)};
+const fData=iso=>iso?iso.split('-').reverse().join('/'):'—';
+const MESES=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+const DOW=['dom','seg','ter','qua','qui','sex','sáb'];
+const DOWL=['Domingo','Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado'];
+const dow=iso=>iso?DOW[toD(iso).getDay()]:'';
+const cap=s=>s.charAt(0).toUpperCase()+s.slice(1);
+const dataExtenso=iso=>{const [y,m,d]=iso.split('-').map(Number);return `${d} de ${MESES[m-1]} de ${y}`};
+const onlyDig=s=>String(s||'').replace(/\D/g,'');
+function cpfOk(v){const c=onlyDig(v);if(c.length!==11||/^(\d)\1+$/.test(c))return false;let s=0;for(let i=0;i<9;i++)s+=+c[i]*(10-i);let r=(s*10)%11;if(r===10)r=0;if(r!==+c[9])return false;s=0;for(let i=0;i<10;i++)s+=+c[i]*(11-i);r=(s*10)%11;if(r===10)r=0;return r===+c[10]}
+const fCPF=v=>onlyDig(v).slice(0,11).replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d{1,2})$/,'$1-$2');
+const fDoc=v=>{const c=onlyDig(v).slice(0,14);if(c.length<=11)return fCPF(c);return c.replace(/^(\d{2})(\d)/,'$1.$2').replace(/^(\d{2})\.(\d{3})(\d)/,'$1.$2.$3').replace(/\.(\d{3})(\d)/,'.$1/$2').replace(/(\d{4})(\d)/,'$1-$2')};
+const fTel=v=>{const c=onlyDig(v).slice(0,11);if(c.length<=10)return c.replace(/^(\d{2})(\d)/,'($1) $2').replace(/(\d{4})(\d)/,'$1-$2');return c.replace(/^(\d{2})(\d{5})(\d)/,'($1) $2-$3')};
+const fCEP=v=>onlyDig(v).slice(0,8).replace(/(\d{5})(\d)/,'$1-$2');
+function extenso(v){
+  v=Math.round((+v||0)*100)/100;const int=Math.floor(v),cent=Math.round((v-int)*100);
+  const u=['','um','dois','três','quatro','cinco','seis','sete','oito','nove','dez','onze','doze','treze','quatorze','quinze','dezesseis','dezessete','dezoito','dezenove'];
+  const d=['','','vinte','trinta','quarenta','cinquenta','sessenta','setenta','oitenta','noventa'];
+  const c=['','cento','duzentos','trezentos','quatrocentos','quinhentos','seiscentos','setecentos','oitocentos','novecentos'];
+  const a999=n=>{if(!n)return'';if(n===100)return'cem';const p=[],h=Math.floor(n/100),r=n%100;if(h)p.push(c[h]);if(r){if(r<20)p.push(u[r]);else{const t=Math.floor(r/10),o=r%10;p.push(o?d[t]+' e '+u[o]:d[t])}}return p.join(' e ')};
+  const inteiro=n=>{if(!n)return'zero';const mi=Math.floor(n/1e6),mil=Math.floor(n/1000)%1000,r=n%1000,parts=[];
+    if(mi)parts.push(mi===1?'um milhão':a999(mi)+' milhões');if(mil)parts.push(mil===1?'mil':a999(mil)+' mil');if(r)parts.push(a999(r));
+    let s=parts[0];for(let i=1;i<parts.length;i++){const last=i===parts.length-1;const lastVal=r?r:mil*1000;s+=(last&&(lastVal<100||lastVal%100===0))?' e '+parts[i]:' '+parts[i]}return s};
+  let out='';
+  if(int)out=inteiro(int)+(int===1?' real':(int%1e6===0?' de reais':' reais'));
+  if(cent)out+=(out?' e ':'')+a999(cent)+(cent===1?' centavo':' centavos');
+  return out||'zero real';
+}
+const FORMAS=['Pix','Dinheiro','Cartão de crédito','Cartão de débito','Transferência','Boleto'];
+const CAT_ENT=['Locação','Taxa de entrega','Caução recebida','Outras entradas'];
+const CAT_SAI=['Combustível','Manutenção e reparos','Ajudante ou monitor','Compra de brinquedos','Limpeza e higienização','Marketing','Impostos e taxas','Devolução de caução','Outras saídas'];
+const CATS_B=['Inflável','Cama elástica','Piscina de bolinhas','Tobogã','Jogos e mesas','Outro'];
+const ENERGIA=['Não precisa','110 V','220 V','Bivolt'];
+const UFS='AC AL AP AM BA CE DF ES GO MA MT MS MG PA PB PR PE PI RJ RN RS RO RR SC SP SE TO'.split(' ');
+const ST={orcamento:['Orçamento','st-orc'],confirmada:['Confirmada','st-conf'],entregue:['Montada no local','st-ent'],concluida:['Concluída','st-ok'],cancelada:['Cancelada','st-canc']};
+
+/* ============ dados ============ */
+const S={brinquedos:{},clientes:{},locacoes:{},caixa:{},assinaturas:{},config:{}};
+const COLS=['brinquedos','clientes','locacoes','caixa','assinaturas'];
+const LS='locabrinq:v1';
+let db=null,dl=null,ro=false;
+const plain=o=>JSON.parse(JSON.stringify(o??{}));
+function loadLocal(){try{const j=JSON.parse(localStorage.getItem(LS)||'null');if(j)for(const k in S)if(j[k])S[k]=j[k]}catch(e){}}
+function saveLocal(){if(db)return;try{localStorage.setItem(LS,JSON.stringify(S))}catch(e){toast('Não foi possível salvar neste aparelho.')}}
+function dbFail(e){
+  if(e&&e.code==='invalid_argument'){ro=true;toast('Você não tem permissão para alterar estes dados.')}
+  else if(e&&e.code==='quota_exceeded')toast('Limite de registros atingido. Exporte um backup e apague lançamentos antigos.');
+  else toast('Não foi possível salvar. Verifique a conexão e tente de novo.');
+  return false;
+}
+async function put(col,obj,quiet){
+  if(ro){toast('Você não tem permissão para alterar estes dados.');return false}
+  S[col]={...S[col],[obj.id]:obj};if(!quiet)render();
+  if(db){try{await db.collection(col).doc(obj.id).set(plain(obj))}catch(e){return dbFail(e)}}else saveLocal();
+  return true;
+}
+async function del(col,id){
+  if(ro){toast('Você não tem permissão para alterar estes dados.');return false}
+  const n={...S[col]};delete n[id];S[col]=n;render();
+  if(db){try{await db.collection(col).doc(id).delete()}catch(e){return dbFail(e)}}else saveLocal();
+  return true;
+}
+async function putConfig(cfg){
+  if(ro){toast('Você não tem permissão para alterar estes dados.');return false}
+  S.config=cfg;render();
+  if(db){try{await db.doc('config/geral').set(plain(cfg))}catch(e){return dbFail(e)}}else saveLocal();
+  return true;
+}
+async function initCaps(){
+  if(!window.claude||typeof window.claude.use!=='function')return;
+  try{dl=await window.claude.use('downloads')}catch(e){dl=null}
+  let d=null;try{d=await window.claude.use('db')}catch(e){d=null}
+  if(d){
+    db=d;
+    COLS.forEach(c=>db.collection(c).onSnapshot(snap=>{const o={};snap.docs.forEach(x=>{o[x.id]=x.data()});S[c]=o;render()},e=>console.warn(c,e)));
+    db.doc('config/geral').onSnapshot(s=>{S.config=s.exists?s.data():{};render()},e=>console.warn(e));
+  }
+  render();
+}
+
+/* ============ regras de negócio ============ */
+const locs=()=>Object.values(S.locacoes);
+const fim=l=>l.dataFim||l.dataInicio;
+const subtotal=l=>(l.itens||[]).reduce((a,i)=>a+numv(i.qtd)*numv(i.valor),0);
+const total=l=>subtotal(l)+numv(l.frete)-numv(l.desconto);
+const pago=l=>Object.values(S.caixa).filter(c=>c.locacaoId===l.id&&c.tipo==='entrada').reduce((a,c)=>a+numv(c.valor),0);
+const saldo=l=>total(l)-pago(l);
+const bloqueia=l=>l.status==='confirmada'||l.status==='entregue';
+const cobra=l=>['confirmada','entregue','concluida'].includes(l.status);
+const numero=l=>String(l.numero||0).padStart(4,'0')+'/'+(l.dataInicio||'').slice(0,4);
+const cliNome=l=>S.clientes[l.clienteId]?.nome||'Cliente removido';
+const itemNome=i=>S.brinquedos[i.bid]?.nome||i.nome||'Brinquedo removido';
+const itensTxt=l=>(l.itens||[]).map(i=>(i.qtd>1?i.qtd+'× ':'')+itemNome(i)).join(', ');
+function endCli(c){if(!c)return'';const a=[c.rua?(c.rua+(c.numero?', '+c.numero:'')):'',c.complemento,c.bairro,c.cidade?(c.cidade+(c.uf?'/'+c.uf:'')):'',c.cep?'CEP '+c.cep:''].filter(Boolean);return a.join(', ')}
+function datas(a,b){const r=[];let x=a,g=0;while(x<=b&&g<62){r.push(x);x=addDays(x,1);g++}return r}
+function reservado(bid,iso,ignore){return locs().filter(l=>l.id!==ignore&&bloqueia(l)&&l.dataInicio<=iso&&fim(l)>=iso).reduce((a,l)=>a+(l.itens||[]).filter(i=>i.bid===bid).reduce((s,i)=>s+(+i.qtd||0),0),0)}
+function livre(bid,iso,ignore){const b=S.brinquedos[bid];return b?(+b.quantidade||0)-reservado(bid,iso,ignore):0}
+function minLivre(bid,a,b,ignore){return Math.min(...datas(a,b<a?a:b).map(d=>livre(bid,d,ignore)))}
+function conflitos(l){const out=[];for(const it of l.itens||[]){const b=S.brinquedos[it.bid];if(!b)continue;for(const d of datas(l.dataInicio,fim(l))){const lv=livre(it.bid,d,l.id);if(+it.qtd>lv){out.push(`${b.nome} em ${fData(d)}: ${Math.max(lv,0)} livre(s), pedido ${it.qtd}`);break}}}return out}
+function noDia(iso){return locs().filter(l=>l.status!=='cancelada'&&l.dataInicio<=iso&&fim(l)>=iso)}
+
+/* ============ interface ============ */
+const ui={tab:'inicio',mes:hoje().slice(0,7),dia:hoje(),filtro:'proximas',busca:'',cad:'brinquedos',cxMes:hoje().slice(0,7),cxTipo:'todos'};
+let toastT;
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('on'),2800)}
+function render(){
+  const views={inicio:vInicio,agenda:vAgenda,locacoes:vLocacoes,cadastros:vCadastros,caixa:vCaixa,ajustes:vAjustes};
+  const act=document.activeElement,wasSearch=act&&act.id==='busca',pos=wasSearch?act.selectionStart:0;
+  $('#main').innerHTML=(views[ui.tab]||vInicio)();
+  document.querySelectorAll('.tabs button').forEach(b=>b.setAttribute('aria-current',b.dataset.id===ui.tab?'page':'false'));
+  $('#empresa').textContent=S.config.empresa||'Minha locadora';
+  if(wasSearch){const s=$('#busca');if(s){s.focus();try{s.setSelectionRange(pos,pos)}catch(e){}}}
+}
+function openSheet(title,html,after){
+  const s=$('#sheet');
+  s.innerHTML=`<div class="sheet-bg" data-a="fechar"></div><section class="panel" role="dialog" aria-modal="true" aria-label="${esc(title)}"><header><h2>${esc(title)}</h2><button class="x" data-a="fechar" aria-label="Fechar">×</button></header><div class="pbody">${html}</div></section>`;
+  s.hidden=false;document.body.style.overflow='hidden';
+  const p=s.querySelector('.panel');p.scrollTop=0;
+  if(after)after(p);
+  const first=p.querySelector('input:not([type=hidden]),select,textarea');if(first&&window.innerWidth>700)first.focus();
+}
+function closeSheet(){const s=$('#sheet');s.hidden=true;s.innerHTML='';document.body.style.overflow=''}
+const opt=(arr,sel)=>arr.map(v=>`<option ${v===sel?'selected':''}>${esc(v)}</option>`).join('');
+function fld(label,name,val,o={}){return `<label class="f"><span>${label}${o.req?' <i aria-hidden="true">*</i>':''}</span><input name="${name}" value="${esc(val??'')}" type="${o.type||'text'}" ${o.req?'required':''} ${o.mask?`data-mask="${o.mask}"`:''} ${o.im?`inputmode="${o.im}"`:''} ${o.ph?`placeholder="${esc(o.ph)}"`:''} ${o.extra||''}></label>`}
+function area(label,name,val,ph){return `<label class="f"><span>${label}</span><textarea name="${name}" ${ph?`placeholder="${esc(ph)}"`:''}>${esc(val??'')}</textarea></label>`}
+function sel(label,name,arr,val,req){return `<label class="f"><span>${label}${req?' <i aria-hidden="true">*</i>':''}</span><select name="${name}" ${req?'required':''}>${opt(arr,val)}</select></label>`}
+
+/* ---------- Início ---------- */
+function evList(iso){
+  const a=[];locs().filter(bloqueia).concat(locs().filter(l=>l.status==='concluida')).forEach(l=>{
+    if(l.dataInicio===iso)a.push({t:l.entrega||'',k:'Entrega',l});
+    if(fim(l)===iso)a.push({t:l.retirada||'',k:'Retirada',l});
+  });
+  a.sort((x,y)=>(x.t||'99').localeCompare(y.t||'99'));
+  if(!a.length)return `<p class="empty">Nenhuma entrega ou retirada.</p>`;
+  return a.map(e=>`<button class="card ev" data-a="verLoc" data-id="${e.l.id}"><time>${esc(e.t||'--:--')}</time><div><span class="kind ${e.k}">${e.k}</span> ${e.l.status==='concluida'?'<span class="st st-ok">Concluída</span>':''}<br><strong>${esc(cliNome(e.l))}</strong><small>${esc(e.l.endereco||'')}</small><small>${esc(itensTxt(e.l))}</small></div></button>`).join('');
+}
+function vInicio(){
+  const h=hoje(),am=addDays(h,1),d=toD(h),mes=h.slice(0,7);
+  const cx=Object.values(S.caixa).filter(c=>(c.data||'').startsWith(mes));
+  const ent=cx.filter(c=>c.tipo==='entrada').reduce((a,c)=>a+numv(c.valor),0);
+  const sai=cx.filter(c=>c.tipo==='saida').reduce((a,c)=>a+numv(c.valor),0);
+  const rec=locs().filter(l=>cobra(l)&&saldo(l)>0.004).sort((a,b)=>a.dataInicio.localeCompare(b.dataInicio));
+  const recTot=rec.reduce((a,l)=>a+saldo(l),0);
+  const prox=locs().filter(l=>bloqueia(l)&&l.dataInicio>am).sort((a,b)=>a.dataInicio.localeCompare(b.dataInicio)).slice(0,5);
+  const orc=locs().filter(l=>l.status==='orcamento'&&fim(l)>=h).length;
+  const onb=!Object.keys(S.brinquedos).length?`<section class="card onb"><h2>Primeiros passos</h2><ol>
+    <li><button class="lnk" data-a="tab" data-id="ajustes">Preencha os dados da sua locadora</button>. Eles entram no contrato.</li>
+    <li><button class="lnk" data-a="irCad" data-id="brinquedos">Cadastre seus brinquedos</button> com quantidade e valor.</li>
+    <li>Cadastre o cliente e registre a primeira locação.</li></ol></section>`:'';
+  return `<h1 class="hello">${DOWL[d.getDay()]}, ${d.getDate()} de ${MESES[d.getMonth()]}</h1>${onb}
+  <section><div class="sh"><h2>Hoje</h2><button class="btn primary sm" data-a="novaLoc" data-dia="${h}">Nova locação</button></div>${evList(h)}</section>
+  <section><div class="sh"><h2>Amanhã</h2></div>${evList(am)}</section>
+  <section><div class="sh"><h2>${cap(MESES[d.getMonth()])} no caixa</h2><button class="lnk" data-a="tab" data-id="caixa">Abrir caixa</button></div>
+   <div class="stats"><div class="stat in"><span>Entradas</span><b>${brl(ent)}</b></div><div class="stat out"><span>Saídas</span><b>${brl(sai)}</b></div><div class="stat"><span>Saldo</span><b>${brl(ent-sai)}</b></div></div></section>
+  <section><div class="sh"><h2>A receber</h2><b>${brl(recTot)}</b></div>
+   ${rec.length?rec.slice(0,6).map(l=>`<button class="card row" data-a="verLoc" data-id="${l.id}" style="display:flex"><div><strong>${esc(cliNome(l))}</strong><small>${fData(l.dataInicio)} · contrato ${numero(l)}</small></div><span class="due">${brl(saldo(l))}</span></button>`).join(''):`<p class="empty">Nenhum saldo em aberto.</p>`}</section>
+  <section><div class="sh"><h2>Próximas reservas</h2>${orc?`<button class="lnk" data-a="filtroIr" data-id="orcamentos">${orc} orçamento${orc>1?'s':''} em aberto</button>`:''}</div>
+   ${prox.length?prox.map(cardLoc).join(''):`<p class="empty">Nenhuma reserva depois de amanhã.</p>`}</section>`;
+}
+
+/* ---------- Agenda ---------- */
+function vAgenda(){
+  const [y,m]=ui.mes.split('-').map(Number),first=new Date(y,m-1,1),nd=new Date(y,m,0).getDate(),h=hoje();
+  let cells=DOW.map(w=>`<div class="wd">${w}</div>`).join('');
+  for(let i=0;i<first.getDay();i++)cells+=`<div class="day blank"></div>`;
+  for(let d=1;d<=nd;d++){
+    const iso=`${y}-${pad2(m)}-${pad2(d)}`,ls=noDia(iso),n=ls.filter(l=>l.status!=='orcamento').length;
+    cells+=`<button class="day ${n?'busy':''} ${iso===h?'today':''} ${iso===ui.dia?'sel':''}" data-a="dia" data-dia="${iso}" aria-label="${d} de ${MESES[m-1]}${n?', '+n+' locação(ões)':''}"><span class="n">${d}</span>${ls.length?`<span class="c">${ls.length}</span>`:''}</button>`;
+  }
+  const dl_=noDia(ui.dia).sort((a,b)=>(a.entrega||'').localeCompare(b.entrega||''));
+  const bs=Object.values(S.brinquedos).filter(b=>b.ativo!==false).sort((a,b)=>a.nome.localeCompare(b.nome));
+  const disp=bs.length?bs.map(b=>{const q=+b.quantidade||0,lv=Math.max(0,livre(b.id,ui.dia));const pc=q?lv/q*100:0;return `<div class="av"><strong>${esc(b.nome)}</strong><span class="${lv?'':'due'}">${lv} de ${q} livre${q>1?'s':''}</span><div class="bar"><i class="${lv===0?'none':pc<50?'low':''}" style="width:${Math.max(pc,lv?6:100)}%"></i></div></div>`}).join(''):`<p class="muted">Cadastre brinquedos para ver a disponibilidade.</p>`;
+  return `<div class="mnav"><button class="x" data-a="mes" data-d="-1" aria-label="Mês anterior">‹</button><h2>${MESES[m-1]} ${y}</h2><button class="x" data-a="mes" data-d="1" aria-label="Próximo mês">›</button></div>
+  <div class="cal">${cells}</div>
+  <section style="margin-top:22px"><div class="sh"><h2>${cap(dow(ui.dia))}, ${fData(ui.dia)}</h2><button class="btn primary sm" data-a="novaLoc" data-dia="${ui.dia}">Nova locação</button></div>
+   ${dl_.length?dl_.map(cardLoc).join(''):`<p class="empty">Dia livre.</p>`}</section>
+  <section><div class="sh"><h2>Disponibilidade no dia</h2></div><div class="card">${disp}</div></section>`;
+}
+
+/* ---------- Locações ---------- */
+function cardLoc(l){
+  const d=toD(l.dataInicio),sd=saldo(l),mult=fim(l)!==l.dataInicio;
+  return `<button class="card loc" data-a="verLoc" data-id="${l.id}"><div class="dt"><b>${d.getDate()}</b><span>${MESES[d.getMonth()].slice(0,3)}</span></div><div>
+   <div class="row"><strong>${esc(cliNome(l))}</strong><span class="st ${ST[l.status]?.[1]||''}">${ST[l.status]?.[0]||''}</span></div>
+   <small>${cap(dow(l.dataInicio))} – entrega ${esc(l.entrega||'--:--')}, retirada ${esc(l.retirada||'--:--')}${mult?' em '+fData(fim(l)):''}</small>
+   <small>${esc(itensTxt(l))}</small>
+   <div class="row" style="margin-top:4px"><span>${brl(total(l))}</span>${cobra(l)?(sd>0.004?`<span class="due">Falta ${brl(sd)}</span>`:`<span class="paid">Pago</span>`):''}</div></div></button>`;
+}
+function listLoc(){
+  const h=hoje(),q=ui.busca.toLowerCase();let a=locs();
+  const f={proximas:l=>fim(l)>=h&&l.status!=='cancelada'&&l.status!=='concluida',orcamentos:l=>l.status==='orcamento',receber:l=>cobra(l)&&saldo(l)>0.004,concluidas:l=>l.status==='concluida',canceladas:l=>l.status==='cancelada',todas:()=>true}[ui.filtro];
+  a=a.filter(f);
+  if(q)a=a.filter(l=>(cliNome(l)+' '+itensTxt(l)+' '+(l.endereco||'')+' '+numero(l)).toLowerCase().includes(q));
+  a.sort((x,y)=>ui.filtro==='proximas'||ui.filtro==='orcamentos'?x.dataInicio.localeCompare(y.dataInicio):y.dataInicio.localeCompare(x.dataInicio));
+  return a.length?a.map(cardLoc).join(''):`<p class="empty">Nenhuma locação aqui.</p>`;
+}
+function vLocacoes(){
+  const F=[['proximas','Próximas'],['orcamentos','Orçamentos'],['receber','A receber'],['concluidas','Concluídas'],['canceladas','Canceladas'],['todas','Todas']];
+  return `<div class="sh"><h2 style="font-size:1.5rem">Locações</h2><button class="btn primary sm" data-a="novaLoc" data-dia="${hoje()}">Nova locação</button></div>
+  <div class="chips">${F.map(([k,t])=>`<button class="chip" data-a="filtro" data-id="${k}" aria-pressed="${ui.filtro===k}">${t}</button>`).join('')}</div>
+  <input id="busca" class="search" type="search" placeholder="Buscar por cliente, brinquedo ou endereço" value="${esc(ui.busca)}" aria-label="Buscar locações">
+  <div id="lista">${listLoc()}</div>`;
+}
+
+/* ---------- Cadastros ---------- */
+function listCad(){
+  const q=ui.busca.toLowerCase();
+  if(ui.cad==='brinquedos'){
+    let a=Object.values(S.brinquedos).sort((x,y)=>(y.ativo!==false)-(x.ativo!==false)||x.nome.localeCompare(y.nome));
+    if(q)a=a.filter(b=>(b.nome+' '+(b.categoria||'')).toLowerCase().includes(q));
+    return a.length?a.map(b=>`<button class="card" data-a="editBrinq" data-id="${b.id}"><div class="row"><strong>${esc(b.nome)}</strong><span>${brl(b.valor)}</span></div><small>${esc(b.categoria||'')}${b.dimensoes?' – '+esc(b.dimensoes):''}</small><div class="row" style="margin-top:4px"><small>${+b.quantidade||0} unidade${+b.quantidade>1?'s':''}${b.idade?' – '+esc(b.idade):''}</small>${b.ativo===false?'<span class="tag">Inativo</span>':''}</div></button>`).join(''):`<p class="empty">Nenhum brinquedo cadastrado ainda.</p>`;
+  }
+  let a=Object.values(S.clientes).sort((x,y)=>x.nome.localeCompare(y.nome));
+  if(q)a=a.filter(c=>(c.nome+' '+c.cpf+' '+(c.tel||'')+' '+(c.bairro||'')).toLowerCase().includes(q));
+  return a.length?a.map(c=>{const n=locs().filter(l=>l.clienteId===c.id).length;return `<button class="card" data-a="editCli" data-id="${c.id}"><div class="row"><strong>${esc(c.nome)}</strong><span class="tag">${n} locaç${n===1?'ão':'ões'}</span></div><small>CPF ${esc(c.cpf)} – ${esc(c.tel||'')}</small><small>${esc([c.bairro,c.cidade].filter(Boolean).join(', '))}</small></button>`}).join(''):`<p class="empty">Nenhum cliente cadastrado ainda.</p>`;
+}
+function vCadastros(){
+  const b=ui.cad==='brinquedos';
+  return `<div class="seg"><button data-a="cad" data-id="brinquedos" aria-pressed="${b}">Brinquedos</button><button data-a="cad" data-id="clientes" aria-pressed="${!b}">Clientes</button></div>
+  <div class="sh"><h2 style="font-size:1.5rem">${b?'Brinquedos':'Clientes'}</h2><button class="btn primary sm" data-a="${b?'novoBrinq':'novoCli'}">${b?'Novo brinquedo':'Novo cliente'}</button></div>
+  <input id="busca" class="search" type="search" placeholder="${b?'Buscar brinquedo':'Buscar por nome, CPF, telefone ou bairro'}" value="${esc(ui.busca)}" aria-label="Buscar">
+  <div id="lista">${listCad()}</div>`;
+}
+
+/* ---------- Caixa ---------- */
+function cxDoMes(){return Object.values(S.caixa).filter(c=>(c.data||'').startsWith(ui.cxMes))}
+function vCaixa(){
+  const [y,m]=ui.cxMes.split('-').map(Number);
+  let a=cxDoMes();
+  const ent=a.filter(c=>c.tipo==='entrada').reduce((s,c)=>s+numv(c.valor),0),sai=a.filter(c=>c.tipo==='saida').reduce((s,c)=>s+numv(c.valor),0);
+  if(ui.cxTipo!=='todos')a=a.filter(c=>c.tipo===ui.cxTipo);
+  a.sort((x,y)=>y.data.localeCompare(x.data)||(y.criadoEm||'').localeCompare(x.criadoEm||''));
+  let html='',last='';
+  a.forEach(c=>{if(c.data!==last){html+=`<p class="dgrp">${cap(dow(c.data))}, ${fData(c.data)}</p>`;last=c.data}
+    const l=c.locacaoId?S.locacoes[c.locacaoId]:null;
+    html+=`<button class="cx" data-a="editCaixa" data-id="${c.id}"><strong>${esc(c.descricao||c.categoria)}</strong><b class="${c.tipo==='entrada'?'in':'out'}">${c.tipo==='entrada'?'+':'−'} ${brl(c.valor)}</b><small>${esc(c.categoria)}${c.forma?' – '+esc(c.forma):''}${l?' – contrato '+numero(l):''}</small></button>`});
+  const cats={};cxDoMes().filter(c=>c.tipo==='saida').forEach(c=>{cats[c.categoria]=(cats[c.categoria]||0)+numv(c.valor)});
+  const top=Object.entries(cats).sort((a,b)=>b[1]-a[1]);
+  return `<div class="mnav"><button class="x" data-a="cxMes" data-d="-1" aria-label="Mês anterior">‹</button><h2>${MESES[m-1]} ${y}</h2><button class="x" data-a="cxMes" data-d="1" aria-label="Próximo mês">›</button></div>
+  <div class="stats"><div class="stat in"><span>Entradas</span><b>${brl(ent)}</b></div><div class="stat out"><span>Saídas</span><b>${brl(sai)}</b></div><div class="stat"><span>Saldo</span><b>${brl(ent-sai)}</b></div></div>
+  <div class="two"><button class="btn green" data-a="novoCaixa" data-tipo="entrada">Lançar entrada</button><button class="btn primary" style="background:var(--red)" data-a="novoCaixa" data-tipo="saida">Lançar saída</button></div>
+  ${top.length?`<div class="card" style="margin-bottom:14px"><h3 style="font-size:.95rem;margin-bottom:6px">Para onde foi o dinheiro</h3>${top.map(([k,v])=>`<div class="av"><span>${esc(k)}</span><span>${brl(v)}</span><div class="bar"><i class="none" style="width:${sai?v/sai*100:0}%"></i></div></div>`).join('')}</div>`:''}
+  <div class="chips">${[['todos','Tudo'],['entrada','Entradas'],['saida','Saídas']].map(([k,t])=>`<button class="chip" data-a="cxTipo" data-id="${k}" aria-pressed="${ui.cxTipo===k}">${t}</button>`).join('')}${dl?`<button class="chip" data-a="csv">Exportar planilha (CSV)</button>`:''}</div>
+  ${html||`<p class="empty">Nenhum lançamento neste mês.</p>`}`;
+}
+
+/* ---------- Ajustes ---------- */
+function vAjustes(){
+  const c=S.config;
+  return `<h1 class="hello">Ajustes</h1>
+  <form data-form="config" class="card">
+   <fieldset style="margin-top:0"><legend>Dados do locador (vão para o contrato)</legend>
+    ${fld('Nome ou razão social','empresa',c.empresa,{req:1})}
+    <div class="g2">${fld('CPF ou CNPJ','doc',c.doc,{req:1,mask:'doc',im:'numeric'})}${fld('Telefone / WhatsApp','tel',c.tel,{mask:'tel',im:'tel'})}</div>
+    ${fld('Endereço completo','endereco',c.endereco,{ph:'Rua, número, bairro, cidade/UF'})}
+    <div class="g2">${fld('Cidade onde o contrato é assinado','cidade',c.cidade,{ph:'Curitiba/PR'})}${fld('Comarca do foro','foro',c.foro,{ph:'Curitiba/PR'})}</div>
+    ${fld('Chave Pix','pix',c.pix)}
+   </fieldset>
+   <fieldset><legend>Condições do contrato</legend>
+    <div class="g3">${fld('Cancelamento sem custo até (dias antes)','cancDias',c.cancDias??7,{type:'number',im:'numeric',extra:'min="0"'})}${fld('Retenção após esse prazo (%)','cancPct',c.cancPct??30,{type:'number',im:'numeric',extra:'min="0" max="100"'})}${fld('Taxa de nova visita (R$)','taxaVisita',c.taxaVisita?nfmt(c.taxaVisita):'',{im:'decimal',ph:'0,00'})}</div>
+    ${area('Cláusulas adicionais (uma por parágrafo)','extras',c.extras,'Ex.: O LOCATÁRIO autoriza o uso de fotos do evento, sem identificação das crianças, para divulgação.')}
+   </fieldset>
+   <div class="acts"><button class="btn primary">Salvar ajustes</button></div>
+  </form>
+  <section style="margin-top:22px"><div class="card"><h2 style="font-size:1.1rem;margin-bottom:6px">Seus dados</h2>
+   <p class="muted" style="margin:0 0 10px">${db?'Salvos na sua conta e sincronizados entre os aparelhos em que você abrir este app.':'Salvos só neste navegador. Exporte um backup com frequência.'}</p>
+   <div class="acts">${dl?'<button class="btn ghost" data-a="backup">Exportar backup</button>':''}<button class="btn ghost" data-a="importar">Importar backup</button></div>
+   <p class="srv">${Object.keys(S.brinquedos).length} brinquedos, ${Object.keys(S.clientes).length} clientes, ${locs().length} locações, ${Object.keys(S.caixa).length} lançamentos.</p></div></section>`;
+}
+
+/* ============ formulários ============ */
+function formBrinq(id){
+  const b=id?plain(S.brinquedos[id]):{ativo:true,quantidade:1,categoria:'Inflável',energia:'Não precisa'};
+  openSheet(id?'Editar brinquedo':'Novo brinquedo',`<form data-form="brinq" data-id="${id||''}">
+   ${fld('Nome','nome',b.nome,{req:1,ph:'Ex.: Pula-pula 3 x 3 m'})}
+   <div class="g2">${sel('Categoria','categoria',CATS_B,b.categoria)}${fld('Quantidade que você tem','quantidade',b.quantidade,{type:'number',req:1,im:'numeric',extra:'min="1"'})}</div>
+   <div class="g2">${fld('Valor da diária (R$)','valor',b.valor!=null?nfmt(b.valor):'',{req:1,im:'decimal',ph:'0,00'})}${fld('Dimensões','dimensoes',b.dimensoes,{ph:'3 x 3 x 2,5 m'})}</div>
+   <div class="g2">${fld('Faixa etária','idade',b.idade,{ph:'3 a 10 anos'})}${fld('Crianças ao mesmo tempo','capacidade',b.capacidade,{type:'number',im:'numeric',extra:'min="0"'})}</div>
+   ${sel('Energia elétrica','energia',ENERGIA,b.energia)}
+   ${area('Regras de uso deste brinquedo (entram no termo)','regras',b.regras,'Ex.: Peso máximo de 40 kg por criança. Proibido uso com água.')}
+   <label class="check"><input type="checkbox" name="ativo" ${b.ativo!==false?'checked':''}> Disponível para locação</label>
+   <div class="acts">${id?`<button type="button" class="btn ghost danger" data-a="delBrinq" data-id="${id}" data-arm>Excluir</button>`:''}<button class="btn primary">Salvar brinquedo</button></div></form>`);
+}
+function formCli(id,retorno){
+  const c=id?plain(S.clientes[id]):{uf:'PR'};
+  const ls=id?locs().filter(l=>l.clienteId===id):[];
+  const hist=id?`<div class="note">${ls.length} locaç${ls.length===1?'ão':'ões'} – ${brl(ls.filter(cobra).reduce((a,l)=>a+total(l),0))} contratados${ls.length?` – última em ${fData(ls.map(l=>l.dataInicio).sort().pop())}`:''}</div>`:'';
+  ui.retorno=retorno||null;
+  openSheet(id?'Editar cliente':'Novo cliente',`${hist}<form data-form="cli" data-id="${id||''}">
+   ${fld('Nome completo','nome',c.nome,{req:1})}
+   <div class="g2">${fld('CPF','cpf',c.cpf,{req:1,mask:'cpf',im:'numeric',ph:'000.000.000-00'})}${fld('RG','rg',c.rg)}</div>
+   <div class="g2">${fld('Telefone / WhatsApp','tel',c.tel,{req:1,mask:'tel',im:'tel',ph:'(41) 99999-9999'})}${fld('E-mail','email',c.email,{type:'email'})}</div>
+   <fieldset><legend>Endereço</legend>
+    <div class="g2">${fld('CEP','cep',c.cep,{mask:'cep',im:'numeric'})}${fld('Número','numero',c.numero,{req:1})}</div>
+    ${fld('Rua','rua',c.rua,{req:1})}
+    <div class="g2">${fld('Complemento','complemento',c.complemento)}${fld('Bairro','bairro',c.bairro,{req:1})}</div>
+    <div class="g2">${fld('Cidade','cidade',c.cidade,{req:1})}${sel('UF','uf',UFS,c.uf)}</div>
+   </fieldset>
+   ${area('Observações','obs',c.obs,'Ex.: prefere contato à tarde; portão lateral')}
+   <div class="acts">${id?`<button type="button" class="btn ghost danger" data-a="delCli" data-id="${id}" data-arm>Excluir</button>`:''}<button class="btn primary">Salvar cliente</button></div></form>`);
+}
+let locDraft=null;
+function formLoc(id,draft,dia){
+  const cfg=S.config;
+  const l=draft||(id?plain(S.locacoes[id]):{status:'confirmada',dataInicio:dia||hoje(),dataFim:dia||hoje(),entrega:'09:00',retirada:'18:00',itens:[],mesmoEndereco:true,respCliente:true,forma:'Pix'});
+  const cls=Object.values(S.clientes).sort((a,b)=>a.nome.localeCompare(b.nome));
+  const bs=Object.values(S.brinquedos).filter(b=>b.ativo!==false||(l.itens||[]).some(i=>i.bid===b.id)).sort((a,b)=>a.nome.localeCompare(b.nome));
+  const it=bid=>(l.itens||[]).find(i=>i.bid===bid);
+  const rows=bs.length?bs.map(b=>{const i=it(b.id);return `<div class="it" data-bid="${b.id}" data-nome="${esc(b.nome)}"><div><strong>${esc(b.nome)}</strong><span class="lv" data-livre></span></div>
+    <div class="step"><button type="button" data-a="menos" aria-label="Menos ${esc(b.nome)}">−</button><input name="q_${b.id}" type="number" min="0" inputmode="numeric" value="${i?i.qtd:0}" aria-label="Quantidade de ${esc(b.nome)}"><button type="button" data-a="mais" aria-label="Mais ${esc(b.nome)}">+</button></div>
+    <label>Valor unitário R$ <input name="v_${b.id}" inputmode="decimal" value="${nfmt(i?i.valor:b.valor)}"></label></div>`}).join(''):`<p class="empty">Nenhum brinquedo disponível. <button type="button" class="lnk" data-a="irCadF" data-id="brinquedos">Cadastrar brinquedo</button></p>`;
+  openSheet(id?`Editar locação ${numero(l)}`:'Nova locação',`<form data-form="loc" data-id="${id||''}" novalidate>
+   <fieldset style="margin-top:0"><legend>Cliente</legend>
+    <label class="f"><span>Locatário <i aria-hidden="true">*</i></span><select name="clienteId"><option value="">Escolha um cliente</option>${cls.map(c=>`<option value="${c.id}" ${c.id===l.clienteId?'selected':''}>${esc(c.nome)} – ${esc(c.cpf)}</option>`).join('')}</select></label>
+    <button type="button" class="lnk" data-a="novoCliLoc">Cadastrar novo cliente</button>
+   </fieldset>
+   <fieldset><legend>Quando</legend>
+    <div class="g2">${fld('Data da entrega','dataInicio',l.dataInicio,{type:'date',req:1})}${fld('Horário da entrega','entrega',l.entrega,{type:'time'})}</div>
+    <div class="g2">${fld('Data da retirada','dataFim',l.dataFim||l.dataInicio,{type:'date',req:1})}${fld('Horário da retirada','retirada',l.retirada,{type:'time'})}</div>
+   </fieldset>
+   <fieldset><legend>Onde</legend>
+    <label class="check"><input type="checkbox" name="mesmoEndereco" ${l.mesmoEndereco!==false?'checked':''}> Evento no endereço do cliente</label>
+    <div data-end ${l.mesmoEndereco!==false?'hidden':''}>${area('Endereço do evento','endereco',l.mesmoEndereco!==false?'':l.endereco,'Rua, número, bairro, cidade – salão, condomínio, ponto de referência')}</div>
+   </fieldset>
+   <fieldset><legend>Responsável no local</legend>
+    <label class="check"><input type="checkbox" name="respCliente" ${l.respCliente!==false?'checked':''}> O próprio cliente cuidará dos brinquedos e das crianças</label>
+    <div data-resp ${l.respCliente!==false?'hidden':''}>${fld('Nome completo do responsável','respNome',l.respCliente!==false?'':l.respNome)}<div class="g2">${fld('CPF do responsável','respCpf',l.respCliente!==false?'':l.respCpf,{mask:'cpf',im:'numeric'})}${fld('Telefone','respTel',l.respCliente!==false?'':l.respTel,{mask:'tel',im:'tel'})}</div></div>
+   </fieldset>
+   <fieldset><legend>Brinquedos</legend>${rows}</fieldset>
+   <fieldset><legend>Valores e pagamento</legend>
+    <div class="g3">${fld('Taxa de entrega','frete',nfmt(l.frete),{im:'decimal'})}${fld('Desconto','desconto',nfmt(l.desconto),{im:'decimal'})}${fld('Caução (garantia)','caucao',nfmt(l.caucao),{im:'decimal'})}</div>
+    <div class="sum"><div class="row"><span>Brinquedos</span><span data-sub></span></div><div class="row"><span>Total do contrato</span><span class="big" data-tot></span></div></div>
+    <div class="g2">${sel('Forma de pagamento','forma',FORMAS,l.forma)}<label class="f"><span>Situação</span><select name="status">${Object.entries(ST).map(([k,v])=>`<option value="${k}" ${k===l.status?'selected':''}>${v[0]}</option>`).join('')}</select></label></div>
+    ${fld('Condições de pagamento','condicoes',l.condicoes,{ph:'Ex.: 50% na reserva e 50% na entrega'})}
+   </fieldset>
+   ${area('Observações','obs',l.obs,'Ex.: acesso pela garagem; tomada a 10 m')}
+   <div class="warn" hidden></div>
+   <div class="acts"><button class="btn primary">${id?'Salvar alterações':'Registrar locação'}</button></div></form>`,p=>recalcLoc(p.querySelector('form')));
+}
+function readLoc(f){
+  const fd=new FormData(f),g=k=>(fd.get(k)??'').toString().trim(),itens=[];
+  f.querySelectorAll('.it').forEach(r=>{const q=parseInt(r.querySelector('[name^="q_"]').value)||0;if(q>0)itens.push({bid:r.dataset.bid,nome:r.dataset.nome,qtd:q,valor:numv(r.querySelector('[name^="v_"]').value)})});
+  return {id:f.dataset.id||'',clienteId:g('clienteId'),dataInicio:g('dataInicio'),dataFim:g('dataFim')||g('dataInicio'),entrega:g('entrega'),retirada:g('retirada'),
+    mesmoEndereco:fd.get('mesmoEndereco')==='on',endereco:g('endereco'),respCliente:fd.get('respCliente')==='on',respNome:g('respNome'),respCpf:g('respCpf'),respTel:g('respTel'),
+    itens,frete:numv(g('frete')),desconto:numv(g('desconto')),caucao:numv(g('caucao')),forma:g('forma'),condicoes:g('condicoes'),status:g('status'),obs:g('obs')};
+}
+function recalcLoc(f){
+  if(!f)return;const a=f.elements.dataInicio.value,b=f.elements.dataFim.value||a,id=f.dataset.id;let sub=0;
+  f.querySelectorAll('.it').forEach(r=>{const bid=r.dataset.bid,q=parseInt(r.querySelector('[name^="q_"]').value)||0,v=numv(r.querySelector('[name^="v_"]').value);sub+=q*v;
+    const s=r.querySelector('[data-livre]'),b0=S.brinquedos[bid];
+    if(s&&b0&&a){const lv=Math.max(0,minLivre(bid,a,b,id));s.textContent=lv<=0?'Sem unidade livre no período':`${lv} de ${b0.quantidade} livre${lv>1?'s':''} no período`;s.className='lv'+(q>lv?' bad':'')}
+    r.classList.toggle('on',q>0)});
+  f.querySelector('[data-sub]').textContent=brl(sub);
+  f.querySelector('[data-tot]').textContent=brl(sub+numv(f.elements.frete.value)-numv(f.elements.desconto.value));
+}
+function formCaixa(id,tipo,locId){
+  const c=id?plain(S.caixa[id]):{tipo:tipo||'entrada',data:hoje(),forma:'Pix',locacaoId:locId||''};
+  const ativas=locs().filter(l=>l.status!=='cancelada').sort((a,b)=>b.dataInicio.localeCompare(a.dataInicio)).slice(0,60);
+  openSheet(id?'Editar lançamento':(c.tipo==='entrada'?'Nova entrada':'Nova saída'),`<form data-form="caixa" data-id="${id||''}">
+   <div class="tipo" role="radiogroup" aria-label="Tipo"><label><input type="radio" name="tipo" value="entrada" ${c.tipo==='entrada'?'checked':''}>Entrada</label><label><input type="radio" name="tipo" value="saida" ${c.tipo==='saida'?'checked':''}>Saída</label></div>
+   <div class="g2">${fld('Valor (R$)','valor',c.valor?nfmt(c.valor):'',{req:1,im:'decimal',ph:'0,00'})}${fld('Data','data',c.data,{type:'date',req:1})}</div>
+   <div class="g2"><label class="f"><span>Categoria</span><select name="categoria">${opt(c.tipo==='entrada'?CAT_ENT:CAT_SAI,c.categoria)}</select></label>${sel('Forma','forma',FORMAS,c.forma)}</div>
+   ${fld('Descrição','descricao',c.descricao,{ph:'Ex.: Gasolina da semana'})}
+   <label class="f" data-vinc ${c.tipo==='saida'?'hidden':''}><span>Vincular a uma locação</span><select name="locacaoId"><option value="">Nenhuma</option>${ativas.map(l=>`<option value="${l.id}" ${l.id===c.locacaoId?'selected':''}>${numero(l)} – ${esc(cliNome(l))} – ${fData(l.dataInicio)}</option>`).join('')}</select></label>
+   <div class="acts">${id?`<button type="button" class="btn ghost danger" data-a="delCaixa" data-id="${id}" data-arm>Excluir</button>`:''}<button class="btn primary">Salvar lançamento</button></div></form>`);
+}
+function formPag(id){
+  const l=S.locacoes[id];if(!l)return;const sd=Math.max(0,saldo(l));
+  openSheet('Registrar pagamento',`<p class="muted" style="margin-top:0">Contrato ${numero(l)} – ${esc(cliNome(l))}. Saldo: <b>${brl(sd)}</b></p>
+  <form data-form="pag" data-id="${id}">
+   <div class="g2">${fld('Valor recebido (R$)','valor',nfmt(sd),{req:1,im:'decimal'})}${fld('Data','data',hoje(),{type:'date',req:1})}</div>
+   <div class="g2">${sel('Forma','forma',FORMAS,l.forma)}${sel('Categoria','categoria',CAT_ENT,'Locação')}</div>
+   <div class="acts"><button type="button" class="btn ghost" data-a="verLoc" data-id="${id}">Voltar</button><button class="btn green">Registrar pagamento</button></div></form>`);
+}
+const CHECK={entrega:['Brinquedos montados e ancorados','Soprador e energia testados','Regras de uso explicadas ao responsável','Contrato e termo assinados'],retirada:['Brinquedos conferidos, sem avarias','Peças, lonas e acessórios completos','Saldo recebido','Caução devolvida (se houver)']};
+function formVist(id,fase){
+  const l=S.locacoes[id];if(!l)return;const sd=saldo(l);
+  openSheet(fase==='entrega'?'Registrar entrega':'Registrar retirada',`<form data-form="vist" data-id="${id}" data-fase="${fase}">
+   ${fase==='retirada'&&sd>0.004?`<div class="warn">Ainda falta receber ${brl(sd)}. <button type="button" class="lnk" data-a="pagar" data-id="${id}">Registrar pagamento</button></div>`:''}
+   ${fase==='entrega'&&!S.assinaturas[id]?.locatario?`<div class="note">O contrato ainda não foi assinado. <button type="button" class="lnk" data-a="docs" data-id="${id}">Colher assinaturas</button></div>`:''}
+   ${CHECK[fase].map((t,i)=>`<label class="check"><input type="checkbox" name="c${i}" value="${esc(t)}"> ${esc(t)}</label>`).join('')}
+   ${fld('Horário','hora',agoraHM(),{type:'time'})}
+   ${area(fase==='entrega'?'Observações da entrega':'Avarias ou observações','obs','')}
+   <div class="acts"><button type="button" class="btn ghost" data-a="verLoc" data-id="${id}">Voltar</button><button class="btn primary">${fase==='entrega'?'Confirmar entrega':'Confirmar retirada'}</button></div></form>`);
+}
+
+/* ============ detalhe da locação ============ */
+function openLoc(id){
+  const l=S.locacoes[id];if(!l){closeSheet();return}
+  const c=S.clientes[l.clienteId]||{},tot=total(l),pg=pago(l),sd=tot-pg,as=S.assinaturas[id]||{};
+  const pags=Object.values(S.caixa).filter(x=>x.locacaoId===id).sort((a,b)=>a.data.localeCompare(b.data));
+  const next={orcamento:['st','confirmada','Confirmar reserva'],confirmada:['vist','entrega','Registrar entrega'],entregue:['vist','retirada','Registrar retirada']}[l.status];
+  const nextBtn=next?(next[0]==='st'?`<button class="btn primary" data-a="status" data-id="${id}" data-st="${next[1]}">${next[2]}</button>`:`<button class="btn primary" data-a="vist" data-id="${id}" data-fase="${next[1]}">${next[2]}</button>`):'';
+  const tel=onlyDig(c.tel);
+  const msg=`Olá, ${(c.nome||'').split(' ')[0]}! Sua locação está ${l.status==='orcamento'?'orçada':'confirmada'}.\n\nData: ${cap(dow(l.dataInicio))}, ${fData(l.dataInicio)}\nEntrega: ${l.entrega||'a combinar'}\nRetirada: ${l.retirada||'a combinar'}${fim(l)!==l.dataInicio?' em '+fData(fim(l)):''}\nBrinquedos: ${itensTxt(l)}\nLocal: ${l.endereco||''}\n\nTotal: ${brl(tot)}\nPago: ${brl(pg)}\nSaldo: ${brl(Math.max(0,sd))}${S.config.pix?'\nPix: '+S.config.pix:''}\n\n${S.config.empresa||''}`;
+  const vs=l.vistoria||{};
+  const vblk=['entrega','retirada'].filter(f=>vs[f]).map(f=>`<div class="blk"><h3>${f==='entrega'?'Entrega':'Retirada'} registrada – ${esc(vs[f].em)}</h3>${(vs[f].itens||[]).map(t=>`<small>✓ ${esc(t)}</small>`).join('')}${vs[f].obs?`<p style="margin-top:6px">${esc(vs[f].obs)}</p>`:''}</div>`).join('');
+  openSheet(`${cliNome(l)}`,`
+   <div class="row" style="margin-bottom:12px"><span class="st ${ST[l.status][1]}">${ST[l.status][0]}</span><span class="muted">Contrato ${numero(l)}</span></div>
+   <div class="acts" style="margin:0 0 12px">${nextBtn}<button class="btn yellow" data-a="docs" data-id="${id}">Contrato e termo${as.locatario?' ✓':''}</button></div>
+   <div class="blk"><h3>Quando</h3><p><b>Entrega:</b> ${cap(dow(l.dataInicio))}, ${fData(l.dataInicio)} às ${esc(l.entrega||'—')}<br><b>Retirada:</b> ${cap(dow(fim(l)))}, ${fData(fim(l))} às ${esc(l.retirada||'—')}</p></div>
+   <div class="blk"><h3>Onde</h3><p>${esc(l.endereco||'—')}</p></div>
+   <div class="blk"><h3>Locatário</h3><p><b>${esc(c.nome||'Cliente removido')}</b><br>CPF ${esc(c.cpf||'—')}${c.tel?'<br>'+esc(c.tel):''}</p>${l.respCliente?'':`<p><b>Responsável no local:</b> ${esc(l.respNome)}, CPF ${esc(l.respCpf)}${l.respTel?', '+esc(l.respTel):''}</p>`}</div>
+   <div class="blk"><h3>Brinquedos e valores</h3><table class="lines">
+    ${(l.itens||[]).map(i=>`<tr><td>${i.qtd}× ${esc(itemNome(i))}</td><td>${brl(i.qtd*i.valor)}</td></tr>`).join('')}
+    ${numv(l.frete)?`<tr><td>Taxa de entrega</td><td>${brl(l.frete)}</td></tr>`:''}
+    ${numv(l.desconto)?`<tr><td>Desconto</td><td>− ${brl(l.desconto)}</td></tr>`:''}
+    <tr class="t"><td>Total</td><td>${brl(tot)}</td></tr><tr><td>Pago</td><td>${brl(pg)}</td></tr>
+    <tr><td><b>${sd>=0?'Falta receber':'Pago a mais'}</b></td><td><b class="${sd>0.004?'due':'paid'}">${brl(Math.abs(sd))}</b></td></tr></table>
+    ${numv(l.caucao)?`<small>Caução combinada: ${brl(l.caucao)}</small>`:''}
+    <small>${esc(l.forma||'')}${l.condicoes?' – '+esc(l.condicoes):''}</small></div>
+   <div class="blk"><h3>Pagamentos</h3>${pags.length?pags.map(p=>`<div class="row"><span>${fData(p.data)} – ${esc(p.forma||'')}</span><b>${brl(p.valor)}</b></div>`).join(''):'<p class="muted">Nenhum pagamento registrado.</p>'}
+    <div class="acts" style="margin-top:10px"><button class="btn green sm" data-a="pagar" data-id="${id}">Registrar pagamento</button></div></div>
+   ${vblk}
+   ${l.obs?`<div class="blk"><h3>Observações</h3><p>${esc(l.obs)}</p></div>`:''}
+   <div class="acts">
+    ${tel?`<a class="btn ghost" href="https://wa.me/55${tel}?text=${encodeURIComponent(msg)}" target="_blank" rel="noopener">Enviar resumo no WhatsApp</a>`:''}
+    <button class="btn ghost" data-a="editLoc" data-id="${id}">Editar</button>
+    ${l.status!=='cancelada'&&l.status!=='concluida'?`<button class="btn ghost danger" data-a="status" data-id="${id}" data-st="cancelada" data-arm>Cancelar locação</button>`:''}
+    <button class="btn ghost danger" data-a="delLoc" data-id="${id}" data-arm>Excluir</button>
+   </div>`);
+}
+
+/* ============ contrato e termo ============ */
+function docHTML(l){
+  const cfg=S.config,c=S.clientes[l.clienteId]||{},as=S.assinaturas[l.id]||{};
+  const b=k=>`<b>${esc(k)}</b>`,tot=total(l),sub=subtotal(l);
+  const bs=(l.itens||[]).map(i=>S.brinquedos[i.bid]).filter(Boolean);
+  const energia=[...new Set(bs.map(x=>x.energia).filter(e=>e&&e!=='Não precisa'))];
+  const regras=bs.filter(x=>x.regras);
+  const L=v=>v?esc(v):'<span style="color:#b00">[preencher em Ajustes]</span>';
+  const tabela=`<table><tr><th>Qtd.</th><th>Descrição</th><th class="r">Valor</th></tr>${(l.itens||[]).map(i=>{const x=S.brinquedos[i.bid];return `<tr><td>${i.qtd}</td><td>${esc(itemNome(i))}${x&&x.dimensoes?' ('+esc(x.dimensoes)+')':''}</td><td class="r">${brl(i.qtd*i.valor)}</td></tr>`}).join('')}</table>`;
+  const resp=l.respCliente!==false?{nome:c.nome,cpf:c.cpf,tel:c.tel}:{nome:l.respNome,cpf:l.respCpf,tel:l.respTel};
+  const sigResp=l.respCliente!==false?as.locatario:as.responsavel;
+  const sig=(s,nome,papel,doc)=>`<div>${s?`<img src="${s.img}" alt="Assinatura de ${esc(nome)}">`:'<div class="sp"></div>'}<div class="ln">${esc(nome||'')}<br>${papel}${doc?' – '+esc(doc):''}${s?`<em>Assinado na tela em ${new Date(s.em).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'})}</em>`:''}</div></div>`;
+  const extras=(cfg.extras||'').split(/\n\s*\n|\n/).map(s=>s.trim()).filter(Boolean);
+  let n=0;const cl=t=>`<p>${b(`CLÁUSULA ${++n}ª – ${t}.`)} `;
+  const dias=cfg.cancDias??7,pct=cfg.cancPct??30;
+  const local=(cfg.cidade||'________________')+', '+dataExtenso(hoje())+'.';
+  return `<div class="doc">
+  <h1>CONTRATO DE LOCAÇÃO DE BRINQUEDOS</h1><p class="sub">Contrato nº ${numero(l)}</p>
+  <p>${b('LOCADOR:')} ${L(cfg.empresa)}, inscrito(a) no CPF/CNPJ sob o nº ${L(cfg.doc)}, com endereço em ${L(cfg.endereco)}${cfg.tel?', telefone '+esc(cfg.tel):''}.</p>
+  <p>${b('LOCATÁRIO:')} ${esc(c.nome||'')}, inscrito(a) no CPF sob o nº ${esc(c.cpf||'')}${c.rg?', RG '+esc(c.rg):''}, residente em ${esc(endCli(c))}${c.tel?', telefone '+esc(c.tel):''}${c.email?', e-mail '+esc(c.email):''}.</p>
+  <p>As partes acima identificadas celebram o presente contrato de locação de bens móveis, regido pelos arts. 565 a 578 do Código Civil e, no que couber, pela Lei nº 8.078/1990 (Código de Defesa do Consumidor), mediante as cláusulas a seguir.</p>
+  ${cl('DO OBJETO')}O LOCADOR cede ao LOCATÁRIO, por tempo determinado, o uso e gozo dos seguintes bens:</p>${tabela}
+  ${cl('DO PRAZO, DA ENTREGA E DA RETIRADA')}A locação vigora de ${fData(l.dataInicio)} a ${fData(fim(l))}, com entrega e montagem previstas para as ${esc(l.entrega||'__:__')} de ${fData(l.dataInicio)} e retirada às ${esc(l.retirada||'__:__')} de ${fData(fim(l))}, no seguinte endereço: ${esc(l.endereco||'')}.</p>
+  <p>${b('Parágrafo único.')} O LOCATÁRIO garantirá acesso ao local e espaço plano, limpo e desobstruído, compatível com as dimensões dos bens${energia.length?`, bem como ponto de energia elétrica em ${energia.join(' ou ')} próximo ao local de montagem`:''}.</p>
+  ${cl('DO PREÇO E DO PAGAMENTO')}Pela locação, o LOCATÁRIO pagará o valor total de ${b(brl(tot))} (${extenso(tot)}), correspondente a ${brl(sub)} pelos bens${numv(l.frete)?`, acrescido de ${brl(l.frete)} de taxa de entrega`:''}${numv(l.desconto)?`, deduzido desconto de ${brl(l.desconto)}`:''}, mediante ${esc(l.forma||'')}${l.condicoes?`, nas seguintes condições: ${esc(l.condicoes)}`:''}${cfg.pix&&l.forma==='Pix'?`, chave Pix ${esc(cfg.pix)}`:''}.</p>
+  ${numv(l.caucao)?`<p>${b('Parágrafo único.')} A título de garantia, o LOCATÁRIO entrega caução de ${brl(l.caucao)} (${extenso(l.caucao)}), a ser restituída na retirada dos bens, deduzidos os valores eventualmente devidos na forma deste contrato.</p>`:''}
+  ${cl('DAS OBRIGAÇÕES DO LOCADOR')}Compete ao LOCADOR: I – entregar os bens em perfeitas condições de uso, segurança e higiene; II – realizar a montagem, a fixação e a desmontagem; III – orientar o responsável indicado sobre as regras de uso; IV – reparar ou substituir, sem ônus, o bem que apresentar defeito não causado pelo LOCATÁRIO (art. 566, I, do Código Civil).</p>
+  ${cl('DAS OBRIGAÇÕES DO LOCATÁRIO')}Compete ao LOCATÁRIO (art. 569 do Código Civil): I – utilizar os bens exclusivamente no endereço e para a finalidade contratados, vedadas a cessão e a sublocação; II – manter supervisão permanente de adulto responsável durante todo o uso, nos termos do Termo de Responsabilidade anexo, que integra este contrato; III – não mover, desmontar ou alterar a instalação dos bens; IV – pagar pontualmente o preço; V – restituir os bens no estado em que os recebeu, salvo o desgaste natural do uso regular; VI – ressarcir os danos causados aos bens por uso inadequado, negligência ou ato de terceiros sob sua responsabilidade, apurados em vistoria na retirada.</p>
+  ${cl('DAS CONDIÇÕES CLIMÁTICAS E DE SEGURANÇA')}Em caso de chuva, vento forte ou outra condição que comprometa a segurança, o uso dos bens deverá ser imediatamente interrompido, podendo o LOCADOR ou seu preposto suspender o funcionamento, sem que isso configure descumprimento contratual por qualquer das partes.</p>
+  ${cl('DA RETIRADA')}Impedida a retirada no horário ajustado por fato atribuível ao LOCATÁRIO, este pagará o aluguel proporcional ao período excedente${numv(cfg.taxaVisita)?` e a taxa de nova visita de ${brl(cfg.taxaVisita)}`:' e os custos de novo deslocamento'}, respondendo ainda pelos danos que os bens vierem a sofrer nesse período (art. 575 do Código Civil).</p>
+  ${cl('DO CANCELAMENTO')}O cancelamento pelo LOCATÁRIO com antecedência mínima de ${esc(dias)} dias da data da entrega dará direito à restituição integral dos valores pagos; em prazo inferior, o LOCADOR poderá reter até ${esc(pct)}% do valor total, a título de compensação pela reserva da data. Fica ressalvado o direito de arrependimento do art. 49 do Código de Defesa do Consumidor quando a contratação ocorrer fora do estabelecimento comercial.</p>
+  ${cl('DOS DADOS PESSOAIS')}Os dados pessoais do LOCATÁRIO e do responsável indicado serão tratados exclusivamente para a execução deste contrato e o cumprimento de obrigações legais, nos termos da Lei nº 13.709/2018 (LGPD).</p>
+  ${extras.map(t=>`${cl('DISPOSIÇÃO ADICIONAL')}${esc(t)}</p>`).join('')}
+  ${cl('DO FORO')}Fica eleito o foro da comarca de ${L(cfg.foro)} para dirimir as questões oriundas deste contrato, ressalvado ao LOCATÁRIO consumidor o direito de demandar no foro de seu domicílio (art. 101, I, do Código de Defesa do Consumidor).</p>
+  <p>E, por estarem assim justas e contratadas, as partes assinam o presente instrumento.</p>
+  <p style="text-align:right">${esc(local)}</p>
+  <div class="sigs">${sig(null,cfg.empresa,'LOCADOR',cfg.doc)}${sig(as.locatario,c.nome,'LOCATÁRIO',c.cpf)}${sig(null,'','Testemunha 1 – CPF','')}${sig(null,'','Testemunha 2 – CPF','')}</div>
+
+  <div class="pb"><h1>TERMO DE RESPONSABILIDADE E CIÊNCIA DAS REGRAS DE USO</h1><p class="sub">Anexo ao Contrato nº ${numero(l)}</p>
+  <p>Eu, ${b(resp.nome||'')}, inscrito(a) no CPF sob o nº ${esc(resp.cpf||'')}${resp.tel?', telefone '+esc(resp.tel):''}, na qualidade de responsável pela supervisão dos brinquedos e das crianças durante o evento realizado em ${esc(l.endereco||'')}, entre ${fData(l.dataInicio)} e ${fData(fim(l))}, declaro que:</p>
+  <ol>
+   <li>recebi os bens relacionados abaixo montados e fixados pelo LOCADOR, em bom estado de conservação, funcionamento e limpeza, e fui orientado(a) sobre as regras de uso;</li>
+   <li>manterei supervisão contínua de adulto durante todo o período de funcionamento, sem deixar crianças desacompanhadas nos brinquedos;</li>
+   <li>farei respeitar a capacidade máxima de usuários simultâneos e a faixa etária indicadas para cada brinquedo, evitando o uso conjunto por crianças de portes muito diferentes;</li>
+   <li>não permitirei o uso com calçados, óculos, bijuterias ou objetos pontiagudos, nem com alimentos, bebidas ou goma de mascar, tampouco cambalhotas, empurrões ou o uso por adultos;</li>
+   <li>interromperei imediatamente o uso em caso de chuva, vento forte, perda de pressão do inflável ou qualquer anormalidade, comunicando o LOCADOR${cfg.tel?' pelo telefone '+esc(cfg.tel):''};</li>
+   <li>não desligarei o soprador nem removerei ancoragens com crianças no brinquedo, e manterei cabos e extensões fora do alcance delas;</li>
+   <li>responsabilizo-me pelos danos causados aos bens por mau uso, negligência ou vandalismo, apurados em vistoria na retirada.</li>
+  </ol>
+  <table><tr><th>Brinquedo</th><th>Faixa etária</th><th>Capacidade</th></tr>${(l.itens||[]).map(i=>{const x=S.brinquedos[i.bid]||{};return `<tr><td>${i.qtd}× ${esc(itemNome(i))}</td><td>${esc(x.idade||'—')}</td><td>${x.capacidade?esc(x.capacidade)+' crianças':'—'}</td></tr>`}).join('')}</table>
+  ${regras.length?`<p>${b('Regras específicas:')}</p>${regras.map(x=>`<p>${b(x.nome+':')} ${esc(x.regras)}</p>`).join('')}`:''}
+  <p>O presente termo disciplina os deveres de vigilância e de uso durante o evento, sem prejuízo das obrigações legais de cada parte.</p>
+  <p style="text-align:right">${esc(local)}</p>
+  <div class="sigs">${sig(sigResp,resp.nome,'RESPONSÁVEL',resp.cpf)}${sig(null,cfg.empresa,'LOCADOR',cfg.doc)}</div></div></div>`;
+}
+function openDocs(id){
+  const l=S.locacoes[id];if(!l)return;const as=S.assinaturas[id]||{};
+  const falta=!S.config.empresa||!S.config.doc||!S.config.foro;
+  openSheet(`Contrato ${numero(l)}`,`
+   ${falta?`<div class="note">Complete os dados do locador e a comarca do foro em <button class="lnk" data-a="irAjustes">Ajustes</button> para o contrato sair completo.</div>`:''}
+   <div class="docbar">
+    <button class="btn ${as.locatario?'ghost':'yellow'}" data-a="assinar" data-id="${id}" data-quem="locatario">${as.locatario?'Refazer assinatura do locatário':'Assinar: locatário'}</button>
+    ${l.respCliente!==false?'':`<button class="btn ${as.responsavel?'ghost':'yellow'}" data-a="assinar" data-id="${id}" data-quem="responsavel">${as.responsavel?'Refazer assinatura do responsável':'Assinar: responsável'}</button>`}
+    <button class="btn primary" data-a="imprimir" data-id="${id}">Imprimir ou salvar PDF</button>
+    ${dl?`<button class="btn ghost" data-a="baixarDoc" data-id="${id}">Baixar arquivo</button>`:''}
+    <button class="btn ghost" data-a="verLoc" data-id="${id}">Voltar</button>
+   </div>
+   <div class="paper">${docHTML(l)}</div>`);
+}
+let padState=null;
+function openAss(id,quem){
+  const l=S.locacoes[id];if(!l)return;const c=S.clientes[l.clienteId]||{};
+  const nome=quem==='locatario'?c.nome:l.respNome;
+  openSheet(quem==='locatario'?'Assinatura do locatário':'Assinatura do responsável',`
+   <p class="muted" style="margin-top:0">${esc(nome||'')} – assine com o dedo dentro do quadro. Ao salvar, a assinatura entra no ${quem==='locatario'?'contrato'+(l.respCliente!==false?' e no termo':''):'termo de responsabilidade'}.</p>
+   <canvas class="pad" id="pad" aria-label="Área de assinatura"></canvas>
+   <div class="acts"><button class="btn ghost" data-a="limparPad">Limpar</button><button class="btn ghost" data-a="docs" data-id="${id}">Voltar</button><button class="btn primary" data-a="salvarPad" data-id="${id}" data-quem="${quem}" data-nome="${esc(nome||'')}">Salvar assinatura</button></div>`,()=>setupPad());
+}
+function setupPad(){
+  const cv=$('#pad'),r=cv.getBoundingClientRect(),dpr=window.devicePixelRatio||1;
+  cv.width=Math.round(r.width*dpr);cv.height=Math.round(r.height*dpr);
+  const ctx=cv.getContext('2d');ctx.scale(dpr,dpr);ctx.lineWidth=2.6;ctx.lineCap='round';ctx.lineJoin='round';ctx.strokeStyle='#111';
+  padState={cv,ctx,dirty:false,down:false};
+  const pt=e=>{const b=cv.getBoundingClientRect();return [e.clientX-b.left,e.clientY-b.top]};
+  cv.addEventListener('pointerdown',e=>{padState.down=true;cv.setPointerCapture(e.pointerId);const [x,y]=pt(e);ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+.1,y+.1);ctx.stroke();padState.dirty=true});
+  cv.addEventListener('pointermove',e=>{if(!padState.down)return;const [x,y]=pt(e);ctx.lineTo(x,y);ctx.stroke()});
+  const up=()=>{padState.down=false};cv.addEventListener('pointerup',up);cv.addEventListener('pointercancel',up);
+}
+function docFile(l){
+  return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Contrato ${numero(l)}</title><style>
+  body{margin:0;padding:24px;background:#fff}.doc{max-width:760px;margin:0 auto;font-family:Georgia,'Times New Roman',serif;font-size:14px;line-height:1.62;color:#111}
+  .doc h1{font-size:16px;text-align:center;margin:0 0 2px}.doc .sub{text-align:center;margin:0 0 18px;font-size:13px}.doc p{margin:0 0 10px;text-align:justify}
+  .doc table{width:100%;border-collapse:collapse;margin:6px 0 12px;font-size:13px}.doc th,.doc td{border:1px solid #999;padding:4px 7px;text-align:left}.doc td.r{text-align:right}
+  .doc ol{padding-left:22px}.doc li{margin-bottom:6px;text-align:justify}.sigs{display:grid;grid-template-columns:1fr 1fr;gap:26px 24px;margin-top:30px}
+  .sigs div{text-align:center;font-size:12.5px}.sigs .ln{border-top:1px solid #111;padding-top:4px}.sigs img{height:62px;display:block;margin:0 auto -4px}.sigs .sp{height:58px}.sigs em{display:block;font-size:10.5px;color:#555;font-style:normal}
+  .pb{margin-top:36px;border-top:1px dashed #bbb;padding-top:28px}@media print{body{padding:0}.pb{border:0;margin:0;padding:0;break-before:page}@page{margin:18mm 16mm}}
+  </style></head><body>${docHTML(l)}</body></html>`;
+}
+async function baixar(filename,data){
+  if(!dl){toast('Download indisponível nesta visualização.');return}
+  try{await dl.save({filename,data});toast('Arquivo pronto.')}catch(e){if(e&&e.code!=='declined')toast('Não foi possível baixar o arquivo.')}
+}
+
+/* ============ ações ============ */
+const A={
+  tab:id=>{ui.tab=id;ui.busca='';closeSheet();render();window.scrollTo(0,0)},
+  irAjustes:()=>A.tab('ajustes'),
+  irCad:id=>{ui.cad=id;A.tab('cadastros')},
+  irCadF:id=>{ui.cad=id;A.tab('cadastros');formBrinq()},
+  filtroIr:id=>{ui.filtro=id;A.tab('locacoes')},
+  fechar:()=>closeSheet(),
+  filtro:id=>{ui.filtro=id;render()},
+  cad:id=>{ui.cad=id;ui.busca='';render()},
+  mes:(i,t)=>{const [y,m]=ui.mes.split('-').map(Number);const d=new Date(y,m-1+(+t.dataset.d),1);ui.mes=isoOf(d).slice(0,7);render()},
+  cxMes:(i,t)=>{const [y,m]=ui.cxMes.split('-').map(Number);const d=new Date(y,m-1+(+t.dataset.d),1);ui.cxMes=isoOf(d).slice(0,7);render()},
+  cxTipo:id=>{ui.cxTipo=id;render()},
+  dia:(i,t)=>{ui.dia=t.dataset.dia;render()},
+  novaLoc:(i,t)=>{locDraft=null;formLoc(null,null,t.dataset.dia)},
+  verLoc:id=>openLoc(id),
+  editLoc:id=>formLoc(id),
+  delLoc:async id=>{closeSheet();await del('locacoes',id);if(S.assinaturas[id])await del('assinaturas',id);toast('Locação excluída. Os lançamentos no caixa foram mantidos.')},
+  status:async(id,t)=>{const l=plain(S.locacoes[id]);l.status=t.dataset.st;if(await put('locacoes',l)){toast('Situação: '+ST[l.status][0]);openLoc(id)}},
+  pagar:id=>formPag(id),
+  vist:(id,t)=>formVist(id,t.dataset.fase),
+  docs:id=>openDocs(id),
+  assinar:(id,t)=>openAss(id,t.dataset.quem),
+  limparPad:()=>{if(!padState)return;const {cv,ctx}=padState;ctx.save();ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,cv.width,cv.height);ctx.restore();padState.dirty=false},
+  salvarPad:async(id,t)=>{
+    if(!padState||!padState.dirty){toast('Assine dentro do quadro antes de salvar.');return}
+    const {cv}=padState,o=document.createElement('canvas');o.width=600;o.height=Math.round(600*cv.height/cv.width);o.getContext('2d').drawImage(cv,0,0,o.width,o.height);
+    const cur=plain(S.assinaturas[id]||{id});cur.id=id;cur[t.dataset.quem]={img:o.toDataURL('image/png'),nome:t.dataset.nome,em:new Date().toISOString()};
+    if(await put('assinaturas',cur)){toast('Assinatura salva');openDocs(id)}
+  },
+  imprimir:id=>{const l=S.locacoes[id];$('#print').innerHTML=docHTML(l);try{window.print()}catch(e){toast(dl?'Impressão bloqueada aqui. Use “Baixar arquivo” e imprima de lá.':'Impressão bloqueada nesta visualização.')}},
+  baixarDoc:id=>{const l=S.locacoes[id];baixar(`contrato-${numero(l).replace('/','-')}-${(cliNome(l).split(' ')[0]||'cliente').toLowerCase()}.html`,docFile(l))},
+  novoCli:()=>formCli(),
+  editCli:id=>formCli(id),
+  novoCliLoc:()=>{const f=$('form[data-form="loc"]');locDraft=readLoc(f);formCli(null,'loc')},
+  delCli:async id=>{if(locs().some(l=>l.clienteId===id)){toast('Este cliente tem locações. Exclua-as antes de remover o cadastro.');return}closeSheet();await del('clientes',id);toast('Cliente excluído')},
+  novoBrinq:()=>formBrinq(),
+  editBrinq:id=>formBrinq(id),
+  delBrinq:async id=>{closeSheet();await del('brinquedos',id);toast('Brinquedo excluído')},
+  novoCaixa:(i,t)=>formCaixa(null,t.dataset.tipo),
+  editCaixa:id=>formCaixa(id),
+  delCaixa:async id=>{closeSheet();await del('caixa',id);toast('Lançamento excluído')},
+  menos:(i,t)=>{const inp=t.parentElement.querySelector('input');inp.value=Math.max(0,(parseInt(inp.value)||0)-1);recalcLoc(t.closest('form'))},
+  mais:(i,t)=>{const inp=t.parentElement.querySelector('input');inp.value=(parseInt(inp.value)||0)+1;recalcLoc(t.closest('form'))},
+  csv:()=>{
+    const rows=cxDoMes().sort((a,b)=>a.data.localeCompare(b.data));
+    const q=s=>'"'+String(s??'').replace(/"/g,'""')+'"';
+    const txt='\ufeff'+['Data;Tipo;Categoria;Descrição;Forma;Contrato;Valor'].concat(rows.map(c=>{const l=c.locacaoId?S.locacoes[c.locacaoId]:null;return [fData(c.data),c.tipo==='entrada'?'Entrada':'Saída',q(c.categoria),q(c.descricao),q(c.forma),l?numero(l):'',(c.tipo==='saida'?'-':'')+nfmt(c.valor)].join(';')})).join('\r\n');
+    baixar(`caixa-${ui.cxMes}.csv`,txt);
+  },
+  backup:()=>baixar(`backup-locacoes-${hoje()}.json`,JSON.stringify({app:'locabrinq',versao:1,exportadoEm:new Date().toISOString(),...S},null,1)),
+  importar:()=>$('#fileImport').click()
+};
+document.addEventListener('click',e=>{
+  const t=e.target.closest('[data-a]');if(!t)return;
+  if(t.hasAttribute('data-arm')&&!t.classList.contains('armed')){e.preventDefault();t.classList.add('armed');t.dataset.txt=t.textContent;t.textContent='Toque de novo para confirmar';setTimeout(()=>{if(t.isConnected){t.classList.remove('armed');t.textContent=t.dataset.txt}},3500);return}
+  const fn=A[t.dataset.a];if(fn){e.preventDefault();fn(t.dataset.id,t,e)}
+});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('#sheet').hidden)closeSheet()});
+document.addEventListener('input',e=>{
+  const t=e.target;
+  if(t.dataset.mask){t.setCustomValidity('');t.value={cpf:fCPF,tel:fTel,cep:fCEP,doc:fDoc}[t.dataset.mask](t.value)}
+  if(t.id==='busca'){ui.busca=t.value;const l=$('#lista');if(l)l.innerHTML=ui.tab==='locacoes'?listLoc():listCad()}
+  const f=t.form;
+  if(f&&f.dataset.form==='loc'){
+    if(t.name==='dataInicio'&&(!f.elements.dataFim.value||f.elements.dataFim.value<t.value))f.elements.dataFim.value=t.value;
+    delete f.dataset.force;recalcLoc(f);
+  }
+});
+document.addEventListener('change',e=>{
+  const t=e.target,f=t.form;
+  if(t.id==='fileImport'&&t.files[0]){importar(t.files[0]);t.value='';return}
+  if(!f)return;
+  if(t.name==='mesmoEndereco')f.querySelector('[data-end]').hidden=t.checked;
+  if(t.name==='respCliente')f.querySelector('[data-resp]').hidden=t.checked;
+  if(f.dataset.form==='caixa'&&t.name==='tipo'){f.elements.categoria.innerHTML=opt(t.value==='entrada'?CAT_ENT:CAT_SAI);f.querySelector('[data-vinc]').hidden=t.value==='saida';if(t.value==='saida')f.elements.locacaoId.value=''}
+  if(f.dataset.form==='loc')recalcLoc(f);
+});
+async function importar(file){
+  try{
+    const j=JSON.parse(await file.text());if(!j||typeof j!=='object')throw 0;
+    let n=0;toast('Importando…');
+    for(const c of COLS)for(const o of Object.values(j[c]||{}))if(o&&o.id){if(!await put(c,o,true))throw 1;n++}
+    if(j.config&&typeof j.config==='object')await putConfig(j.config);
+    render();toast(`${n} registros importados`);
+  }catch(e){toast('Não foi possível importar. Use um arquivo de backup exportado por este app.')}
+}
+
+/* ============ envio de formulários ============ */
+const SUB={
+  config:async f=>{
+    const fd=new FormData(f),g=k=>(fd.get(k)??'').toString().trim();
+    const d=onlyDig(g('doc'));if(d.length===11&&!cpfOk(d)){f.elements.doc.setCustomValidity('CPF inválido');f.reportValidity();return}
+    if(d.length!==11&&d.length!==14){f.elements.doc.setCustomValidity('Informe um CPF (11 dígitos) ou CNPJ (14 dígitos)');f.reportValidity();return}
+    const cfg={...plain(S.config),empresa:g('empresa'),doc:g('doc'),tel:g('tel'),endereco:g('endereco'),cidade:g('cidade'),foro:g('foro'),pix:g('pix'),cancDias:parseInt(g('cancDias'))||0,cancPct:Math.min(100,parseInt(g('cancPct'))||0),taxaVisita:numv(g('taxaVisita')),extras:g('extras')};
+    if(await putConfig(cfg))toast('Ajustes salvos');
+  },
+  brinq:async f=>{
+    const fd=new FormData(f),g=k=>(fd.get(k)??'').toString().trim(),id=f.dataset.id;
+    if(numv(g('valor'))<=0){f.elements.valor.setCustomValidity('Informe o valor da diária');f.reportValidity();f.elements.valor.addEventListener('input',()=>f.elements.valor.setCustomValidity(''),{once:true});return}
+    const b={...(id?plain(S.brinquedos[id]):{}),id:id||uid(),nome:g('nome'),categoria:g('categoria'),quantidade:Math.max(1,parseInt(g('quantidade'))||1),valor:numv(g('valor')),dimensoes:g('dimensoes'),idade:g('idade'),capacidade:parseInt(g('capacidade'))||'',energia:g('energia'),regras:g('regras'),ativo:fd.get('ativo')==='on'};
+    if(await put('brinquedos',b)){closeSheet();toast(id?'Brinquedo atualizado':'Brinquedo cadastrado')}
+  },
+  cli:async f=>{
+    const fd=new FormData(f),g=k=>(fd.get(k)??'').toString().trim(),id=f.dataset.id;
+    if(!cpfOk(g('cpf'))){f.elements.cpf.setCustomValidity('CPF inválido. Confira os números.');f.reportValidity();return}
+    const dup=Object.values(S.clientes).find(c=>c.id!==id&&onlyDig(c.cpf)===onlyDig(g('cpf')));
+    if(dup){f.elements.cpf.setCustomValidity(`Já existe um cliente com este CPF: ${dup.nome}`);f.reportValidity();return}
+    const c={...(id?plain(S.clientes[id]):{criadoEm:new Date().toISOString()}),id:id||uid()};
+    ['nome','cpf','rg','tel','email','cep','numero','rua','complemento','bairro','cidade','uf','obs'].forEach(k=>c[k]=g(k));
+    if(!await put('clientes',c))return;
+    toast(id?'Cliente atualizado':'Cliente cadastrado');
+    if(ui.retorno==='loc'&&locDraft){const d=locDraft;d.clienteId=c.id;locDraft=null;ui.retorno=null;formLoc(d.id||null,d)}else closeSheet();
+  },
+  loc:async f=>{
+    const d=readLoc(f),old=d.id?S.locacoes[d.id]:null,errs=[],box=f.querySelector('.warn');
+    if(!d.clienteId)errs.push('Escolha o cliente.');
+    if(!d.dataInicio)errs.push('Informe a data da entrega.');
+    if(d.dataFim<d.dataInicio)errs.push('A retirada não pode ser antes da entrega.');
+    if(!d.itens.length)errs.push('Adicione pelo menos um brinquedo.');
+    if(!d.mesmoEndereco&&!d.endereco)errs.push('Informe o endereço do evento.');
+    if(!d.respCliente){if(!d.respNome)errs.push('Informe o nome do responsável no local.');if(!cpfOk(d.respCpf))errs.push('CPF do responsável inválido.')}
+    if(errs.length){box.innerHTML=errs.map(esc).join('<br>');box.hidden=false;box.scrollIntoView({block:'center',behavior:'smooth'});return}
+    const cl=S.clientes[d.clienteId];
+    if(d.mesmoEndereco)d.endereco=endCli(cl);
+    if(d.respCliente){d.respNome=cl.nome;d.respCpf=cl.cpf;d.respTel=cl.tel}
+    const cf=bloqueia(d)?conflitos({...d,id:d.id||'__novo'}):[];
+    if(cf.length&&f.dataset.force!=='1'){box.innerHTML='<b>Falta disponibilidade:</b><br>'+cf.map(esc).join('<br>')+'<br><br>Toque em salvar de novo para registrar mesmo assim.';box.hidden=false;f.dataset.force='1';box.scrollIntoView({block:'center',behavior:'smooth'});return}
+    const obj={...(old?plain(old):{}),...d,id:d.id||uid()};
+    if(!old){obj.numero=Math.max(0,...locs().map(x=>+x.numero||0))+1;obj.criadoEm=new Date().toISOString()}
+    if(await put('locacoes',obj)){toast(old?'Locação atualizada':'Locação registrada');openLoc(obj.id)}
+  },
+  caixa:async f=>{
+    const fd=new FormData(f),g=k=>(fd.get(k)??'').toString().trim(),id=f.dataset.id,v=numv(g('valor'));
+    if(v<=0){f.elements.valor.setCustomValidity('Informe um valor maior que zero');f.reportValidity();f.elements.valor.addEventListener('input',()=>f.elements.valor.setCustomValidity(''),{once:true});return}
+    const c={...(id?plain(S.caixa[id]):{criadoEm:new Date().toISOString()}),id:id||uid(),tipo:g('tipo'),valor:v,data:g('data'),categoria:g('categoria'),forma:g('forma'),descricao:g('descricao'),locacaoId:g('tipo')==='entrada'?g('locacaoId'):''};
+    if(await put('caixa',c)){closeSheet();toast('Lançamento salvo')}
+  },
+  pag:async f=>{
+    const fd=new FormData(f),g=k=>(fd.get(k)??'').toString().trim(),id=f.dataset.id,l=S.locacoes[id],v=numv(g('valor'));
+    if(v<=0){f.elements.valor.setCustomValidity('Informe um valor maior que zero');f.reportValidity();f.elements.valor.addEventListener('input',()=>f.elements.valor.setCustomValidity(''),{once:true});return}
+    const c={id:uid(),tipo:'entrada',valor:v,data:g('data'),forma:g('forma'),categoria:g('categoria'),descricao:`Contrato ${numero(l)} – ${cliNome(l)}`,locacaoId:id,criadoEm:new Date().toISOString()};
+    if(await put('caixa',c)){toast('Pagamento registrado');openLoc(id)}
+  },
+  vist:async f=>{
+    const id=f.dataset.id,fase=f.dataset.fase,l=plain(S.locacoes[id]),fd=new FormData(f);
+    const itens=[...f.querySelectorAll('input[type=checkbox]:checked')].map(x=>x.value);
+    l.vistoria={...(l.vistoria||{}),[fase]:{itens,obs:(fd.get('obs')||'').toString().trim(),em:fData(hoje())+' às '+(fd.get('hora')||agoraHM())}};
+    l.status=fase==='entrega'?'entregue':'concluida';
+    if(await put('locacoes',l)){toast(fase==='entrega'?'Entrega registrada':'Retirada registrada – locação concluída');openLoc(id)}
+  }
+};
+document.addEventListener('submit',e=>{const f=e.target,k=f.dataset.form;if(!k||!SUB[k])return;e.preventDefault();SUB[k](f)});
+
+/* ============ início ============ */
+loadLocal();
+render();
+initCaps();
+</script>
+</body>
+</html>
