@@ -92,3 +92,22 @@ ok "salvar_locacao: outra locadora não edita" "$(q "$(as authenticated $B "$(sl
 JB="{\"cliente_id\":null,\"data_inicio\":\"2026-12-01\",\"endereco_evento\":\"Rua\",\"status\":\"orcamento\",\"itens\":[{\"brinquedo_id\":\"$PULA\",\"quantidade\":1,\"valor\":1}]}"
 ok "salvar_locacao: outra locadora não usa brinquedo de A" "$(q "$(as authenticated $B "$(sl "$JB")")")" "Brinquedo não encontrado"
 ok "salvar_locacao: anon não executa" "$(q "$(as anon '' "$(sl "$J4V")")")" "permission denied"
+
+# ---- 003: fotos das vistorias (Storage) ----
+F="$LA/$L1/entrega/f1.jpg"
+fo(){ echo "insert into storage.objects(bucket_id,name) values ('vistorias','$1')"; }
+ok "foto: dono envia para a própria locação" "$(q "$(as authenticated $A "$(fo "$F"); select 'ok'")")" "ok"
+ok "foto: entregador envia e vê fotos da locadora" "$(q "$(as authenticated $E "$(fo "$LA/$L1/retirada/f2.jpg"); select count(*) from storage.objects")")" "^2$"
+ok "foto: outra locadora não vê" "$(q "$(as authenticated $B "select count(*) from storage.objects")")" "^0$"
+ok "foto: outra locadora não envia para A" "$(q "$(as authenticated $B "$(fo "$LA/$L1/entrega/x.jpg")")")" "row-level security"
+LB=$(q "select id from locadoras where nome='Festa Kids'")
+ok "foto: A não envia usando a pasta de B" "$(q "$(as authenticated $A "$(fo "$LB/$L1/entrega/x.jpg")")")" "row-level security"
+ok "foto: caminho fora do padrão é recusado" "$(q "$(as authenticated $A "$(fo "$LA/$L1/outra/x.jpg")")")" "row-level security"
+ok "foto: anon não vê nem envia" "$(q "$(as anon '' "select count(*) from storage.objects")") $(q "$(as anon '' "$(fo "$LA/$L1/entrega/y.jpg")")")" "^0 .*row-level security"
+ok "foto: não pode ser apagada" "$(q "$(as authenticated $A "with d as (delete from storage.objects returning 1) select count(*) from d")")" "^0$"
+ok "foto: não pode ser alterada" "$(q "$(as authenticated $A "with u as (update storage.objects set name='$LA/$L1/entrega/z.jpg' returning 1) select count(*) from u")")" "^0$"
+ok "vistoria aceita foto da própria locação e fase" "$(q "$(as authenticated $A "update vistorias set fotos=array['$F'] where locacao_id='$L1' and fase='entrega'; select array_length(fotos,1) from vistorias where locacao_id='$L1' and fase='entrega'")")" "^1$"
+ok "vistoria recusa foto de outra locação" "$(q "$(as authenticated $A "update vistorias set fotos=array['$LA/$L3/entrega/f.jpg'] where locacao_id='$L1' and fase='entrega'")")" "Foto inválida"
+q "update assinaturas_plano set status='atrasada', vencimento=current_date-8 where locadora_id='$LA'" >/dev/null
+ok "foto: conta inadimplente não envia" "$(q "$(as authenticated $A "$(fo "$LA/$L1/entrega/f9.jpg")")")" "row-level security"
+q "update assinaturas_plano set status='ativa', vencimento=current_date+30 where locadora_id='$LA'" >/dev/null

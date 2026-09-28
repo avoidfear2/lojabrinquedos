@@ -20,6 +20,13 @@ export default async function PaginaLocacao({ params }: { params: Promise<{ id: 
       : Promise.resolve({ data: [] as LancamentoCaixa[] }),
     ctx.supabase.from('vistorias').select('*').eq('locacao_id', id),
   ])
+  // Fotos das vistorias: links temporários (o bucket é privado; a RLS do Storage decide quem vê)
+  const caminhos = ((vist.data ?? []) as Vistoria[]).flatMap((v) => v.fotos ?? [])
+  const fotosUrls: Record<string, string> = {}
+  if (caminhos.length) {
+    const { data: urls } = await ctx.supabase.storage.from('vistorias').createSignedUrls(caminhos, 3600)
+    for (const u of urls ?? []) if (u.path && u.signedUrl) fotosUrls[u.path] = u.signedUrl
+  }
   // Contrato: a última versão gravada já tem a assinatura do locatário?
   const { data: docs } = await ctx.supabase.from('documentos').select('id').eq('locacao_id', id).order('criado_em', { ascending: false }).limit(1)
   const docId = (docs ?? [])[0]?.id as string | undefined
@@ -35,6 +42,7 @@ export default async function PaginaLocacao({ params }: { params: Promise<{ id: 
         vistorias={(vist.data ?? []) as Vistoria[]}
         locadora={{ nome: ctx.locadora.nome, pix: ctx.locadora.chave_pix }}
         contratoAssinado={!!assinou}
+        fotosUrls={fotosUrls}
       />
     </>
   )

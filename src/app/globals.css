@@ -236,3 +236,14 @@ a.card{color:inherit;text-decoration:none}
 .docframe{width:100%;border:1px solid var(--line);border-radius:12px;background:#fff;display:block;min-height:480px}
 .assin-lista{display:grid;gap:6px;margin:0 0 14px}
 .assin-lista .row{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+/* Fotos da vistoria */
+.fotos-campo{display:flex;flex-direction:column;gap:8px;margin:4px 0 12px;align-items:flex-start}
+.f-rot{font-size:.86rem;font-weight:600;color:var(--muted)}
+.fotos{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:8px;width:100%}
+.foto{position:relative;aspect-ratio:1;border-radius:10px;overflow:hidden;background:var(--soft-grey);display:block}
+.foto img{width:100%;height:100%;object-fit:cover;display:block}
+.foto.enviando img{opacity:.55}
+.foto .selo{position:absolute;left:4px;bottom:4px;background:var(--ink);color:var(--bg);font-size:.7rem;font-weight:700;border-radius:999px;padding:2px 7px}
+.foto .selo.erro{background:var(--red);color:#fff}
+.foto .tirar{position:absolute;top:4px;right:4px;width:26px;height:26px;border-radius:50%;border:0;background:rgba(0,0,0,.6);color:#fff;font-size:1rem;line-height:1;display:grid;place-items:center}
+.fotos-campo label.btn{cursor:pointer}

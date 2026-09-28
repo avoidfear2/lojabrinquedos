@@ -1,6 +1,6 @@
-// Gateway mínimo (só para testes locais) no formato do Supabase: /rest/v1 -> PostgREST, /auth/v1 -> GoTrue (com CORS, como o Kong)
+// Gateway mínimo (só para testes locais) no formato do Supabase: /rest/v1 -> PostgREST, /auth/v1 -> GoTrue, /storage/v1 -> Storage (com CORS, como o Kong)
 import http from 'node:http'
-const rotas = [['/rest/v1', 3001], ['/auth/v1', 9999]]
+const rotas = [['/rest/v1', 3001], ['/auth/v1', 9999], ['/storage/v1', 5000]]
 const cors = (req) => ({
   'access-control-allow-origin': req.headers.origin || '*',
   'access-control-allow-credentials': 'true',

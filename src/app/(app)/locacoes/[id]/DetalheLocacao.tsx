@@ -2,7 +2,8 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
+import { FotosVistoria } from '@/components/FotosVistoria'
 import { itensTxt, nomeLocacao, Status } from '@/components/locacao'
 import { useSessao } from '@/components/Sessao'
 import { Area, BotaoConfirmar, Campo, Erro, Folha, Selecao } from '@/components/ui'
@@ -21,9 +22,10 @@ interface Props {
   vistorias: Vistoria[]
   locadora: { nome: string; pix: string | null }
   contratoAssinado: boolean
+  fotosUrls: Record<string, string>
 }
 
-export function DetalheLocacao({ l, pagamentos, vistorias, locadora, contratoAssinado }: Props) {
+export function DetalheLocacao({ l, pagamentos, vistorias, locadora, contratoAssinado, fotosUrls }: Props) {
   const router = useRouter()
   const { papel } = useSessao()
   const { executar, erro, pendente } = useAcao()
@@ -169,6 +171,17 @@ export function DetalheLocacao({ l, pagamentos, vistorias, locadora, contratoAss
             <h3>{f === 'entrega' ? 'Entrega' : 'Retirada'} registrada – {fDataHora(v.feita_em)}</h3>
             {v.itens.map((t) => <small key={t}>✓ {t}</small>)}
             {v.observacoes && <p style={{ marginTop: 6 }}>{v.observacoes}</p>}
+            {v.fotos?.length > 0 && (
+              <div className="fotos" style={{ marginTop: 8 }}>
+                {v.fotos.map((f) =>
+                  fotosUrls[f] ? (
+                    <a key={f} className="foto" href={fotosUrls[f]} target="_blank" rel="noopener" aria-label="Abrir foto">
+                      <img src={fotosUrls[f]} alt={`Foto da ${v.fase}`} loading="lazy" />
+                    </a>
+                  ) : null,
+                )}
+              </div>
+            )}
           </div>
         )
       })}
@@ -245,15 +258,18 @@ function FormPagamento({ l, saldo, num, onFim }: { l: LocacaoCompleta; saldo: nu
 }
 
 function FormVistoria({ l, fase, saldo, contratoAssinado, onPagar, onFim }: { l: LocacaoCompleta; fase: VistoriaFase; saldo: number; contratoAssinado: boolean; onPagar: () => void; onFim: () => void }) {
-  const { executar, erro, pendente } = useAcao()
+  const { executar, erro, setErro, pendente } = useAcao()
   const { papel } = useSessao()
+  const [fotos, setFotos] = useState<{ caminhos: string[]; enviando: boolean }>({ caminhos: [], enviando: false })
+  const mudarFotos = useCallback((f: { caminhos: string[]; enviando: boolean }) => setFotos(f), [])
   return (
     <form
       onSubmit={(e) => {
         e.preventDefault()
+        if (fotos.enviando) return setErro('Aguarde as fotos terminarem de enviar.')
         const fd = new FormData(e.currentTarget)
         const itens = fd.getAll('item').map(String)
-        executar(() => registrarVistoria(l.id, fase, itens, String(fd.get('obs') ?? '')), onFim)
+        executar(() => registrarVistoria(l.id, fase, itens, String(fd.get('obs') ?? ''), fotos.caminhos), onFim)
       }}
     >
       {fase === 'entrega' && !contratoAssinado && (
@@ -274,6 +290,7 @@ function FormVistoria({ l, fase, saldo, contratoAssinado, onPagar, onFim }: { l:
           <input type="checkbox" name="item" value={t} /> {t}
         </label>
       ))}
+      <FotosVistoria locadoraId={l.locadora_id} locacaoId={l.id} fase={fase} onMudar={mudarFotos} />
       <Area rotulo={fase === 'entrega' ? 'Observações da entrega' : 'Avarias ou observações'} name="obs" />
       <Erro msg={erro} />
       <div className="acts">
