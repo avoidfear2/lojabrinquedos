@@ -247,3 +247,11 @@ a.card{color:inherit;text-decoration:none}
 .foto .selo.erro{background:var(--red);color:#fff}
 .foto .tirar{position:absolute;top:4px;right:4px;width:26px;height:26px;border-radius:50%;border:0;background:rgba(0,0,0,.6);color:#fff;font-size:1rem;line-height:1;display:grid;place-items:center}
 .fotos-campo label.btn{cursor:pointer}
+/* Link público de reserva */
+.link-publico main{max-width:640px}
+.link-publico .it .step button:disabled{opacity:.4}
+.rodape-link{margin-top:32px;padding-top:16px;border-top:1px solid var(--line);font-size:.85rem;color:var(--muted)}
+.rodape-link p{margin:0 0 6px}
+.pill.link{background:var(--soft-yellow);color:var(--orange)}
+.copiar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.copiar code{background:var(--soft-grey);padding:8px 10px;border-radius:10px;font-size:.9rem;word-break:break-all;flex:1 1 220px}

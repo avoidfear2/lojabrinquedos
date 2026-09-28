@@ -2,6 +2,7 @@
 // (tests/e2e/subir.sh). Uso: npm run test:e2e
 import { chromium } from 'playwright-core'
 import fs from 'node:fs'
+import { execSync } from 'node:child_process'
 
 const B = process.env.APP_URL || 'http://localhost:3000'
 const SHOTS = process.env.SHOTS || '.e2e/telas'
@@ -265,5 +266,50 @@ ok(foto.status() === 200 && (foto.headers()['content-type'] ?? '').includes('ima
 const semLink = await p.request.get(src.replace(/\/sign\//, '/public/').replace(/\?.*$/, ''))
 ok(semLink.status() >= 400, 'foto não fica pública (bucket privado)')
 await shot(p, '12-detalhe-entregue')
+
+// 12. Link público de reserva
+await p.goto(B + '/ajustes')
+await p.locator('input[name="slug"]').fill('pula-alegria-' + Date.now().toString(36))
+const slug = await p.locator('input[name="slug"]').inputValue()
+await p.getByRole('button', { name: 'Salvar link' }).click()
+ok((await toast(p)) === 'Link de reserva salvo', 'dono escolhe o endereço do link')
+ok(await vis(p.getByText('planos Profissional e Equipe')), 'Ajustes avisa que o link é dos planos Profissional e Equipe')
+const c = await novoCtx()
+await c.goto(B + '/r/' + slug)
+ok(await vis(c.getByRole('heading', { name: 'Link indisponível' })), 'plano Essencial: link fica indisponível para o cliente')
+const sqlPlano = (plano) => execSync(`su postgres -c "psql -q -d e2e -c \\"update assinaturas_plano set plano='${plano}' where locadora_id=(select id from locadoras where slug='${slug}')\\""`)
+sqlPlano('profissional')
+await c.goto(B + '/r/' + slug)
+ok(await vis(c.getByRole('heading', { name: 'Faça seu pedido' })), 'plano Profissional: cliente abre o link sem login')
+ok(await vis(c.getByText('Reserva feita diretamente com Pula Alegria Festas')), 'página deixa claro que a reserva é com a locadora')
+await shot(c, '13-link-reserva')
+const dia = new Date(Date.now() + 15 * 864e5).toISOString().slice(0, 10)
+await c.locator('input[type=date]').first().fill(dia)
+const cama = c.locator('.it', { hasText: 'Cama elástica' })
+await cama.getByText(/2 disponíveis/).waitFor({ timeout: 8000 })
+ok(true, 'link mostra disponibilidade real da data')
+await cama.getByRole('button', { name: 'Mais Cama elástica' }).click()
+await c.locator('form input[autocomplete="name"]').fill('Joana Pereira')
+await c.locator('form input[placeholder="000.000.000-00"]').fill('11144477736')
+await c.locator('form input[autocomplete="tel"]').fill('41977776666')
+await c.locator('form textarea').first().fill('Rua das Acácias, 200, Curitiba/PR')
+await c.getByText(/Autorizo o envio dos meus dados/).click()
+await c.getByRole('button', { name: 'Enviar pedido' }).click()
+ok((await c.locator('.warn').textContent({ timeout: 8000 }))?.includes('CPF inválido'), 'link recusa CPF inválido')
+await c.locator('form input[placeholder="000.000.000-00"]').fill('11144477735')
+await c.getByRole('button', { name: 'Enviar pedido' }).click()
+await c.waitForURL(/\/reserva\/[0-9a-f]{24}$/, { timeout: 15000 })
+ok(await vis(c.getByRole('heading', { name: 'Pedido recebido' })), 'cliente vê o pedido recebido e pode acompanhar pelo link')
+await shot(c, '14-pedido-recebido')
+await p.goto(B + '/inicio')
+ok(await vis(p.getByText(/1 pedido pelo link de reserva/)), 'início avisa o dono do pedido novo pelo link')
+await p.goto(B + '/locacoes?filtro=orcamentos')
+const card = p.locator('a.card', { hasText: 'Joana Pereira' })
+ok(await vis(card.getByText('Pelo link')), 'pedido aparece como orçamento "Pelo link"')
+await card.click()
+await p.getByRole('button', { name: 'Confirmar reserva' }).click()
+ok((await toast(p)) === 'Reserva confirmada', 'dono confirma o pedido do link')
+await c.reload()
+ok(await vis(c.getByRole('heading', { name: 'Reserva confirmada' })), 'cliente vê a reserva confirmada')
 
 await browser.close()

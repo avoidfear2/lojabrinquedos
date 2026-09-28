@@ -33,6 +33,7 @@ export default async function Inicio() {
   const recTot = receber.reduce((a, x) => a + x.sd, 0)
   const proximas = futuras.filter((l) => l.status !== 'orcamento' && l.data_inicio > am).slice(0, 5)
   const orc = futuras.filter((l) => l.status === 'orcamento').length
+  const peloLink = futuras.filter((l) => l.status === 'orcamento' && l.origem === 'link').length
   const ent = cx.filter((c) => c.tipo === 'entrada').reduce((a, c) => a + Number(c.valor), 0)
   const sai = cx.filter((c) => c.tipo === 'saida').reduce((a, c) => a + Number(c.valor), 0)
   const semBrinquedos = pode.editarCadastros(papel) && (brinq.count ?? 0) === 0
@@ -58,6 +59,12 @@ export default async function Inicio() {
             <li>Cadastre o cliente e registre a primeira locação.</li>
           </ol>
         </section>
+      )}
+
+      {peloLink > 0 && pode.editarLocacoes(papel) && (
+        <Link className="banner info" href="/locacoes?filtro=orcamentos" style={{ display: 'block', textDecoration: 'none' }}>
+          {peloLink} pedido{peloLink > 1 ? 's' : ''} pelo link de reserva esperando sua confirmação.
+        </Link>
       )}
 
       <section>

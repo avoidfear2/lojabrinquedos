@@ -4,7 +4,9 @@ import { PAPEIS } from '@/lib/dominio/constantes'
 import { fData } from '@/lib/dominio/formato'
 import { pode } from '@/lib/permissoes'
 import { contexto } from '@/lib/sessao'
+import { headers } from 'next/headers'
 import { FormAjustes } from './FormAjustes'
+import { FormLink } from './FormLink'
 
 export const metadata: Metadata = { title: 'Ajustes' }
 
@@ -15,6 +17,9 @@ export default async function Ajustes() {
   const ctx = await contexto()
   const { usuario, locadora, plano, email } = ctx
   const dono = pode.editarLocadora(usuario.papel)
+  const h = await headers()
+  const origem = process.env.NEXT_PUBLIC_SITE_URL || `${h.get('x-forwarded-proto') ?? 'https'}://${h.get('host') ?? ''}`
+  const linkAtivo = ctx.podeGravar && (plano?.plano === 'profissional' || plano?.plano === 'equipe')
   return (
     <>
       <h1 className="hello">Ajustes</h1>
@@ -26,6 +31,12 @@ export default async function Ajustes() {
           <h2 style={{ fontSize: '1.1rem', marginBottom: 6 }}>{locadora.nome}</h2>
           <p className="muted" style={{ margin: 0 }}>Só o dono da conta altera os dados da locadora.</p>
         </div>
+      )}
+
+      {dono && (
+        <section style={{ marginTop: 22 }}>
+          <FormLink slug={locadora.slug} nome={locadora.nome} origem={origem} ativo={linkAtivo} />
+        </section>
       )}
 
       {pode.gerenciarEquipe(usuario.papel) && (

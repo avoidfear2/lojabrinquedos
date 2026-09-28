@@ -53,11 +53,12 @@ ok "app não altera documento (0 linhas)" "$(q "$(as authenticated $A "with u as
 ok "nem o administrador altera documento assinado" "$(q "update documentos set conteudo_html='x' where id='$D'")" "já assinado"
 ok "assinatura não pode ser apagada" "$(q "$(as authenticated $A "with d as (delete from assinaturas_doc returning 1) select count(*) from d")")" "^0$"
 
+D1=$(date -d "+20 days" +%F); D2=$(date -d "+21 days" +%F)  # pedidos pelo link exigem data futura (004)
 ok "link: catálogo mostra o locador e o aviso" "$(q "$(as anon '' "select reserva_catalogo('pula-alegria')->>'aviso'")")" "Reserva feita diretamente com Pula Alegria"
 ok "link: disponibilidade em 10/10 = 0" "$(q "$(as anon '' "select reserva_disponibilidade('pula-alegria','2026-10-10','2026-10-10')->0->>'livres'")")" "^0$"
-COD=$(q "$(as anon '' "select reserva_criar('pula-alegria', jsonb_build_object('nome','João','cpf','111.444.777-35','data_inicio','2026-10-20','endereco_evento','Rua X','itens',jsonb_build_array(jsonb_build_object('id','$BR'))))")" | grep -E '^[0-9a-f]{24}$')
+COD=$(q "$(as anon '' "select reserva_criar('pula-alegria', jsonb_build_object('nome','João','cpf','111.444.777-35','data_inicio','$D1','endereco_evento','Rua X','itens',jsonb_build_array(jsonb_build_object('id','$BR'))))")" | grep -E '^[0-9a-f]{24}$')
 ok "link: pedido entra como orçamento" "$(q "$(as anon '' "select reserva_consultar('$COD')->>'status'")")" "orcamento"
-ok "link: CPF existente não é alterado" "$(q "$(as anon '' "select reserva_criar('pula-alegria', jsonb_build_object('nome','Outro Nome','cpf','52998224725','data_inicio','2026-10-21','endereco_evento','Rua Y','itens',jsonb_build_array(jsonb_build_object('id','$BR'))))") ; select nome from clientes where cpf='52998224725'")" "Maria"
+ok "link: CPF existente não é alterado" "$(q "$(as anon '' "select reserva_criar('pula-alegria', jsonb_build_object('nome','Outro Nome','cpf','52998224725','data_inicio','$D2','endereco_evento','Rua Y','itens',jsonb_build_array(jsonb_build_object('id','$BR'))))") ; select nome from clientes where cpf='52998224725'")" "Maria"
 ok "link: plano Essencial não tem link" "$(q "$(as anon '' "select coalesce(reserva_catalogo('x')::text,'nulo')")")" "nulo"
 
 q "update assinaturas_plano set status='atrasada', vencimento=current_date-8 where locadora_id='$LA'" >/dev/null
@@ -111,3 +112,19 @@ ok "vistoria recusa foto de outra locação" "$(q "$(as authenticated $A "update
 q "update assinaturas_plano set status='atrasada', vencimento=current_date-8 where locadora_id='$LA'" >/dev/null
 ok "foto: conta inadimplente não envia" "$(q "$(as authenticated $A "$(fo "$LA/$L1/entrega/f9.jpg")")")" "row-level security"
 q "update assinaturas_plano set status='ativa', vencimento=current_date+30 where locadora_id='$LA'" >/dev/null
+
+# ---- 004: link de reserva ----
+rc(){ echo "select reserva_criar('pula-alegria', jsonb_build_object('nome','$1','cpf','$2','data_inicio','$3','endereco_evento','Rua do Evento, 10','itens',jsonb_build_array(jsonb_build_object('id','$PULA','quantidade',$4))))"; }
+ok "link 004: CPF com dígito errado é recusado" "$(q "$(as anon '' "$(rc 'Ana Paula' '11144477736' "$D1" 1)")")" "CPF inválido"
+ok "link 004: data no passado é recusada" "$(q "$(as anon '' "$(rc 'Ana Paula' '11144477735' "$(date -d '-1 day' +%F)" 1)")")" "a partir de hoje"
+ok "link 004: quantidade acima do estoque é recusada" "$(q "$(as anon '' "$(rc 'Ana Paula' '11144477735' "$D1" 5)")")" "Quantidade maior"
+ok "link 004: nome curto é recusado" "$(q "$(as anon '' "$(rc 'A' '11144477735' "$D1" 1)")")" "nome completo"
+for i in 1 2 3 4 5; do q "$(as anon '' "$(rc 'Ana Paula' '39053344705' "$D1" 1)")" >/dev/null; done
+ok "link 004: sexto pedido do mesmo CPF no dia é barrado" "$(q "$(as anon '' "$(rc 'Ana Paula' '39053344705' "$D1" 1)")")" "vários pedidos hoje"
+ok "link 004: pedidos do link entram como orçamento com origem link" "$(q "select count(*) from locacoes where origem='link' and status='orcamento' and locadora_id='$LA'")" "^[6-9]$"
+q "update assinaturas_plano set plano='essencial' where locadora_id='$LA'" >/dev/null
+ok "link 004: plano Essencial não recebe pedido" "$(q "$(as anon '' "$(rc 'Ana Paula' '52998224725' "$D1" 1)")")" "Link de reserva indisponível"
+ok "link 004: plano Essencial não mostra catálogo nem disponibilidade" "$(q "$(as anon '' "select coalesce(reserva_catalogo('pula-alegria')::text,'nulo') || ' ' || reserva_disponibilidade('pula-alegria', current_date, current_date)::text")")" "^nulo \\[\\]$"
+q "update assinaturas_plano set plano='profissional' where locadora_id='$LA'" >/dev/null
+ok "link 004: anon continua sem ler tabelas" "$(q "$(as anon '' "select (select count(*) from locacoes) + (select count(*) from clientes)")")" "^0$"
+ok "link 004: anon não chama a função interna do link" "$(q "$(as anon '' "select locadora_link_ativo('$LA')")")" "permission denied"
