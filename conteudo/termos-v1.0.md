@@ -104,4 +104,4 @@ Versão 1.0. Estes Termos regem o uso do sistema de gestão para locadoras de br
 
 13.1. Estes Termos são regidos pelas leis brasileiras.
 
-13.2. Fica eleito o foro da comarca de [CIDADE/UF], ressalvado o direito do consumidor de demandar no foro do seu domicílio.
+13.2. Fica eleito o foro da comarca de Curitiba/PR, ressalvado o direito do consumidor de demandar no foro do seu domicílio.
