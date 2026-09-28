@@ -1,6 +1,6 @@
 #!/bin/bash
 # Sobe um "Supabase local" mínimo para testes de ponta a ponta:
-#   Postgres (local) + GoTrue (Docker) + PostgREST (binário) + gateway /rest/v1 e /auth/v1 + SMTP de teste.
+#   Postgres (local) + GoTrue (Docker) + Storage (código-fonte) + PostgREST (binário) + gateway + SMTP de teste.
 # Depois sobe o app em http://localhost:3000 apontando para esse stack.
 #
 # Uso (Linux, como root, com Postgres 15+ e Docker):  sudo bash tests/e2e/subir.sh
@@ -10,6 +10,11 @@ RAIZ=$(cd "$(dirname "$0")/../.." && pwd)
 DIR="$RAIZ/tests/e2e"
 TMP="$RAIZ/.e2e"
 mkdir -p "$TMP"
+# encerra o que ficou de uma execução anterior
+pkill -f "tsx src/start/server.ts" 2>/dev/null || true
+pkill -f "next-server" 2>/dev/null || true
+for f in "$TMP"/*.pid; do [ -f "$f" ] && kill "$(cat "$f")" 2>/dev/null || true; rm -f "$f"; done
+sleep 1
 export JWT_SECRET=${JWT_SECRET:-super-secret-jwt-token-with-at-least-32-characters-long}
 SENHA=senha_local
 DB=e2e
@@ -48,8 +53,61 @@ docker run -d --name e2e-gotrue --network host \
   supabase/gotrue:v2.170.0 >/dev/null
 for i in $(seq 1 30); do curl -sf localhost:9999/health >/dev/null && break; sleep 1; done
 
+echo "» Storage (código-fonte do supabase/storage)"
+node "$DIR/jwt.mjs" > "$TMP/chaves.env"
+# como no Supabase: o Storage usa um usuário próprio, com search_path = storage
+su postgres -c "psql -q" <<SQL
+do \$\$ begin
+  if not exists (select from pg_roles where rolname='supabase_storage_admin') then
+    create role supabase_storage_admin login superuser password '$SENHA';
+  end if;
+end \$\$;
+alter role supabase_storage_admin set search_path = storage;
+SQL
+if [ ! -d "$TMP/storage/node_modules/fs-xattr/build" ]; then
+  [ -d "$TMP/storage" ] || git clone -q --depth 1 --branch v1.19.1 https://github.com/supabase/storage.git "$TMP/storage"
+  (cd "$TMP/storage" && npm ci --ignore-scripts --no-audit --no-fund >/dev/null && npm rebuild fs-xattr >/dev/null)
+fi
+mkdir -p "$TMP/storage-data"
+cat > "$TMP/storage/.env" <<CONF
+SERVER_HOST=127.0.0.1
+SERVER_PORT=5000
+SERVER_ADMIN_PORT=5001
+SERVER_REGION=local
+AUTH_JWT_SECRET=$JWT_SECRET
+AUTH_JWT_ALGORITHM=HS256
+ANON_KEY=$(grep ^anon= "$TMP/chaves.env" | cut -d= -f2)
+SERVICE_KEY=$(grep ^service_role= "$TMP/chaves.env" | cut -d= -f2)
+DATABASE_URL=postgresql://supabase_storage_admin:$SENHA@127.0.0.1:5432/$DB
+DB_INSTALL_ROLES=false
+DB_ANON_ROLE=anon
+DB_SERVICE_ROLE=service_role
+DB_AUTHENTICATED_ROLE=authenticated
+DB_SUPER_USER=postgres
+STORAGE_BACKEND=file
+STORAGE_FILE_BACKEND_PATH=$TMP/storage-data
+STORAGE_S3_BUCKET=local
+TENANT_ID=local
+GLOBAL_S3_BUCKET=local
+UPLOAD_FILE_SIZE_LIMIT=52428800
+UPLOAD_FILE_SIZE_LIMIT_STANDARD=52428800
+IMAGE_TRANSFORMATION_ENABLED=false
+RATE_LIMITER_ENABLED=false
+PG_QUEUE_ENABLE=false
+DEFAULT_METRICS_ENABLED=false
+LOG_LEVEL=warn
+CONF
+(cd "$TMP/storage" && nohup npx tsx src/start/server.ts > "$TMP/storage.log" 2>&1 & echo $! > "$TMP/storage.pid")
+for i in $(seq 1 60); do curl -sf localhost:5000/status >/dev/null && break; sleep 1; done
+curl -sf localhost:5000/status >/dev/null || { tail -20 "$TMP/storage.log"; exit 1; }
+
 echo "» migrações"
 su postgres -c "psql -q -d $DB" <<SQL
+-- Privilégios padrão do Storage no Supabase (quem protege os arquivos é a RLS de storage.objects)
+grant usage on schema storage to anon, authenticated, service_role;
+grant all on all tables in schema storage to anon, authenticated, service_role;
+grant all on all sequences in schema storage to anon, authenticated, service_role;
+grant all on all functions in schema storage to anon, authenticated, service_role;
 grant usage on schema public to anon, authenticated, service_role;
 alter default privileges in schema public grant all on tables to anon, authenticated, service_role;
 alter default privileges in schema public grant all on functions to anon, authenticated, service_role;
@@ -72,15 +130,12 @@ jwt-secret = "$JWT_SECRET"
 server-port = 3001
 server-host = "127.0.0.1"
 CONF
-for f in "$TMP"/*.pid; do [ -f "$f" ] && kill "$(cat "$f")" 2>/dev/null || true; rm -f "$f"; done
-sleep 1
 rm -f "$TMP/mail.log"
 nohup "$TMP/postgrest" "$TMP/pgrst.conf" > "$TMP/postgrest.log" 2>&1 & echo $! > "$TMP/postgrest.pid"
 nohup node "$DIR/gateway.mjs" > "$TMP/gateway.log" 2>&1 & echo $! > "$TMP/gateway.pid"
 MAIL_LOG="$TMP/mail.log" nohup node "$DIR/smtp.mjs" > "$TMP/smtp.log" 2>&1 & echo $! > "$TMP/smtp.pid"
 
 echo "» app"
-node "$DIR/jwt.mjs" > "$TMP/chaves.env"
 export NEXT_PUBLIC_SUPABASE_URL=http://localhost:54321
 export NEXT_PUBLIC_SUPABASE_ANON_KEY=$(grep ^anon= "$TMP/chaves.env" | cut -d= -f2)
 export SUPABASE_SERVICE_ROLE_KEY=$(grep ^service_role= "$TMP/chaves.env" | cut -d= -f2)

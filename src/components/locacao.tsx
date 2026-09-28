@@ -27,7 +27,9 @@ export function CardLocacao({ l, pago, verValores }: { l: LocacaoCompleta; pago?
       <div>
         <div className="row">
           <strong>{nomeLocacao(l)}</strong>
-          <Status s={l.status} />
+          <span>
+            {l.origem === 'link' && l.status === 'orcamento' && <span className="pill link">Pelo link</span>} <Status s={l.status} />
+          </span>
         </div>
         <small>
           {cap(dow(l.data_inicio))} – entrega {hm(l.hora_entrega) || '--:--'}, retirada {hm(l.hora_retirada) || '--:--'}

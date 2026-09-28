@@ -1,6 +1,7 @@
 'use server'
 
 import { cpfOk, diaValido, fTel, onlyDig } from '@/lib/dominio/formato'
+import { garantirDocumento } from '@/lib/documentos/servidor'
 import { enderecoCliente } from '@/lib/dominio/locacao'
 import type { Resultado } from '@/lib/erros'
 import { pode } from '@/lib/permissoes'
@@ -73,6 +74,8 @@ export async function salvarLocacao(d: EntradaLocacao): Promise<Resultado<string
   }
   const { data, error } = await ctx.supabase.rpc('salvar_locacao', { p })
   if (error) return falha(ctx, error)
+  // Locação confirmada já fica com o contrato pronto para assinar (inclusive pelo entregador)
+  if (status === 'confirmada') await garantirDocumento(ctx, data as string).catch(() => null)
   return sucesso(data as string, d.id ? 'Locação atualizada' : 'Locação registrada')
 }
 
@@ -83,6 +86,7 @@ export async function mudarStatus(id: string, status: 'confirmada' | 'cancelada'
   const { error, count } = await ctx.supabase.from('locacoes').update({ status }, { count: 'exact' }).eq('id', id)
   if (error) return falha(ctx, error)
   if (!count) return { ok: false, erro: 'Locação não encontrada ou sem permissão.' }
+  if (status === 'confirmada') await garantirDocumento(ctx, id).catch(() => null)
   const msg = { confirmada: 'Reserva confirmada', cancelada: 'Locação cancelada', orcamento: 'Voltou para orçamento' }[status]
   return sucesso(undefined, msg)
 }
@@ -97,9 +101,14 @@ export async function excluirLocacao(id: string): Promise<Resultado> {
 }
 
 /** Entrega e retirada (toda a equipe, inclusive entregador), pela função registrar_vistoria. */
-export async function registrarVistoria(id: string, fase: VistoriaFase, itens: string[], obs: string): Promise<Resultado> {
+export async function registrarVistoria(id: string, fase: VistoriaFase, itens: string[], obs: string, fotos: string[] = []): Promise<Resultado> {
   const ctx = await contexto()
   if (fase !== 'entrega' && fase !== 'retirada') return { ok: false, erro: 'Fase inválida.' }
+  // Fotos já enviadas ao Storage pelo aparelho: <locadora>/<locação>/<fase>/<arquivo>
+  const prefixo = `${ctx.locadora.id}/${id}/${fase}/`
+  const fotosOk = [...new Set(fotos)].filter((f) => f.startsWith(prefixo) && /^[\w.-]+$/.test(f.slice(prefixo.length)))
+  if (fotosOk.length !== new Set(fotos).size) return { ok: false, erro: 'Alguma foto não pertence a esta vistoria. Tire as fotos de novo.' }
+  if (fotosOk.length > 20) return { ok: false, erro: 'No máximo 20 fotos por vistoria.' }
   const { data: l } = await ctx.supabase.from('locacoes').select('status').eq('id', id).maybeSingle()
   if (!l) return { ok: false, erro: 'Locação não encontrada.' }
   if (fase === 'entrega' && l.status !== 'confirmada') return { ok: false, erro: 'Só dá para registrar a entrega de uma locação confirmada.' }
@@ -111,5 +120,9 @@ export async function registrarVistoria(id: string, fase: VistoriaFase, itens: s
     p_obs: obs?.trim() || null,
   })
   if (error) return falha(ctx, error)
+  if (fotosOk.length) {
+    const r = await ctx.supabase.from('vistorias').update({ fotos: fotosOk }).eq('locacao_id', id).eq('fase', fase)
+    if (r.error) return { ok: false, erro: 'A vistoria foi registrada, mas as fotos não foram vinculadas: ' + (r.error.message ?? '') }
+  }
   return sucesso(undefined, fase === 'entrega' ? 'Entrega registrada' : 'Retirada registrada – locação concluída')
 }
