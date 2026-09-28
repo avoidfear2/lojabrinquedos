@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState, useTransition } from 'react'
 import { Campo, Erro } from '@/components/ui'
-import { traduzErro } from '@/lib/erros'
+import { traduzErroAuth } from '@/lib/erros'
 import { supabaseNavegador } from '@/lib/supabase/browser'
 
 type Modo = 'entrar' | 'criar' | 'esqueci'
@@ -24,28 +24,38 @@ export function FormEntrar() {
     setErro('')
     setAviso('')
     start(async () => {
+      try {
+        await enviarAuth(email, senha, fd)
+      } catch (err) {
+        setErro(traduzErroAuth(err))
+      }
+    })
+  }
+
+  async function enviarAuth(email: string, senha: string, fd: FormData) {
+    {
       const sb = supabaseNavegador()
       const volta = (next: string) => `${location.origin}/auth/confirmar?next=${encodeURIComponent(next)}`
       if (modo === 'entrar') {
         const { error } = await sb.auth.signInWithPassword({ email, password: senha })
-        if (error) return setErro(traduzErro(error))
+        if (error) return setErro(traduzErroAuth(error))
         router.replace('/inicio')
         router.refresh()
       } else if (modo === 'criar') {
         if (senha.length < 8) return setErro('A senha precisa ter pelo menos 8 caracteres.')
         if (senha !== String(fd.get('senha2') ?? '')) return setErro('As senhas não conferem.')
         const { data, error } = await sb.auth.signUp({ email, password: senha, options: { emailRedirectTo: volta('/cadastro') } })
-        if (error) return setErro(traduzErro(error))
+        if (error) return setErro(traduzErroAuth(error))
         if (data.session) {
           router.replace('/cadastro')
           router.refresh()
         } else setAviso('Enviamos um link de confirmação para ' + email + '. Abra o e-mail para continuar o cadastro.')
       } else {
         const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: volta('/definir-senha') })
-        if (error) return setErro(traduzErro(error))
+        if (error) return setErro(traduzErroAuth(error))
         setAviso('Se este e-mail tiver conta, enviamos um link para criar uma nova senha.')
       }
-    })
+    }
   }
 
   return (
