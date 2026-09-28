@@ -1,4 +1,4 @@
-// Percorre os fluxos da Fase 1 num navegador de verdade contra o stack local
+// Percorre os fluxos das Fases 1 e 2 num navegador de verdade contra o stack local
 // (tests/e2e/subir.sh). Uso: npm run test:e2e
 import { chromium } from 'playwright-core'
 import fs from 'node:fs'
@@ -19,6 +19,20 @@ async function novoCtx() {
 }
 const vis = (l) => l.waitFor({ timeout: 8000 }).then(() => true, () => false)
 const toast = async (p) => (await p.locator('#toast.on').textContent({ timeout: 8000 }).catch(() => ''))?.trim()
+
+async function assinar(pg, rotulo) {
+  await pg.locator('#toast.on').waitFor({ state: 'detached', timeout: 5000 }).catch(() => {})
+  await pg.locator('.assin-lista .row', { hasText: rotulo }).getByRole('button', { name: 'Assinar' }).click()
+  const cv = pg.locator('canvas.pad')
+  await cv.waitFor()
+  const bx = await cv.boundingBox()
+  await pg.mouse.move(bx.x + 30, bx.y + 100)
+  await pg.mouse.down()
+  for (let i = 1; i <= 10; i++) await pg.mouse.move(bx.x + 30 + i * 25, bx.y + 100 + (i % 2 ? 30 : -30))
+  await pg.mouse.up()
+  await pg.getByRole('button', { name: 'Salvar assinatura' }).click()
+  return (await Promise.race([toast(pg), pg.locator('.panel .warn').textContent({ timeout: 8000 }).catch(() => '')])) ?? ''
+}
 
 const email = `dono${Date.now()}@teste.local`
 const p = await novoCtx()
@@ -148,12 +162,42 @@ await p.goto(B + '/agenda?mes=2026-10&dia=2026-10-10')
 ok(await p.getByText('0 de 1 livre').waitFor({ timeout: 8000 }).then(() => true, () => false), 'agenda: disponibilidade no dia 10/10 (0 de 1 livre)')
 await shot(p, '09-agenda')
 
+// 7b. Contrato e termo com assinatura na tela
+await p.goto(urlL1 + '/documento')
+ok(await vis(p.getByText('Para o contrato sair completo')), 'contrato avisa dados do locador faltando em Ajustes')
+ok((await assinar(p, 'Locatário')).includes('preencha em Ajustes'), 'assinatura bloqueada até completar Ajustes')
+await p.keyboard.press('Escape')
+await p.goto(B + '/ajustes')
+await p.locator('main form [name="endereco"]').fill('Rua das Palmeiras, 50, Curitiba/PR')
+await p.locator('main form [name="cidade"]').fill('Curitiba/PR')
+await p.locator('main form [name="comarca_foro"]').fill('Curitiba/PR')
+await p.getByRole('button', { name: 'Salvar ajustes' }).click()
+ok((await toast(p)) === 'Ajustes salvos', 'ajustes do locador salvos')
+await p.goto(urlL1 + '/documento')
+await p.locator('.assin-lista').waitFor()
+ok((await assinar(p, 'Locatário')) === 'Assinatura do locatário salva', 'locatário assina na tela')
+await p.waitForTimeout(800)
+ok((await assinar(p, 'Locador')) === 'Assinatura do locador salva', 'locador assina na tela')
+await p.waitForTimeout(800)
+ok(await vis(p.locator('.assin-lista .row', { hasText: 'Locatário' }).getByText(/Assinado em/)), 'tela mostra o locatário como assinado')
+const arq = await p.request.get(urlL1 + '/documento/arquivo')
+const corpo = await arq.text()
+ok((arq.headers()['content-security-policy'] ?? '').includes("default-src 'none'"), 'documento servido sem permitir scripts (CSP)')
+ok(corpo.includes('CONTRATO DE LOCAÇÃO DE BRINQUEDOS') && corpo.includes('<b>LOCADOR:</b> Pula Alegria Festas'), 'contrato traz a locadora como LOCADOR')
+ok((corpo.match(/<img src="data:image\/png/g) ?? []).length === 4, 'assinaturas aparecem no contrato e no termo (4 lugares)')
+await shot(p, '09b-contrato')
+await p.goto(urlL1)
+ok(await vis(p.getByRole('link', { name: 'Contrato e termo ✓' })), 'detalhe mostra contrato assinado (✓)')
+
 // 8. Editar locação: tentar mover a locação 1 para uma data vaga funciona
 await p.goto(urlL1 + '/editar')
 await p.locator('input[type=date]').first().fill('2026-10-12')
 await p.getByRole('button', { name: 'Salvar alterações' }).click()
 await p.waitForURL(urlL1)
 ok(await vis(p.getByText('12/10/2026').first()), 'edição muda a data (via salvar_locacao)')
+await p.goto(urlL1 + '/documento')
+ok(await vis(p.getByText('A locação mudou depois das assinaturas')), 'após editar, contrato vira nova versão e pede assinaturas de novo')
+ok(await vis(p.locator('.assin-lista .row', { hasText: 'Locatário' }).getByRole('button', { name: 'Assinar' })), 'nova versão começa sem assinaturas')
 
 // 9. Equipe: convidar entregador
 await p.goto(B + '/ajustes/equipe')
@@ -194,6 +238,12 @@ await e.locator('.blk h3', { hasText: 'Brinquedos' }).waitFor()
 ok(!(await e.getByText('Falta receber').isVisible()), 'entregador não vê valores')
 ok(!(await e.getByRole('link', { name: 'Editar' }).isVisible()), 'entregador não edita locação')
 await shot(e, '11-entregador-detalhe')
+await e.goto(urlL1 + '/documento')
+await e.locator('.assin-lista').waitFor()
+ok(!(await e.locator('.assin-lista .row', { hasText: 'Locador' }).isVisible()), 'entregador não assina pelo locador')
+ok((await assinar(e, 'Locatário')) === 'Assinatura do locatário salva', 'entregador colhe a assinatura do locatário na entrega')
+await e.goto(urlL1)
+await e.locator('.blk h3', { hasText: 'Brinquedos' }).waitFor()
 await e.getByRole('button', { name: 'Registrar entrega' }).click()
 await e.getByText('Brinquedos montados e ancorados').click()
 await e.getByRole('button', { name: 'Confirmar entrega' }).click()

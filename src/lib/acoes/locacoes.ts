@@ -1,6 +1,7 @@
 'use server'
 
 import { cpfOk, diaValido, fTel, onlyDig } from '@/lib/dominio/formato'
+import { garantirDocumento } from '@/lib/documentos/servidor'
 import { enderecoCliente } from '@/lib/dominio/locacao'
 import type { Resultado } from '@/lib/erros'
 import { pode } from '@/lib/permissoes'
@@ -73,6 +74,8 @@ export async function salvarLocacao(d: EntradaLocacao): Promise<Resultado<string
   }
   const { data, error } = await ctx.supabase.rpc('salvar_locacao', { p })
   if (error) return falha(ctx, error)
+  // Locação confirmada já fica com o contrato pronto para assinar (inclusive pelo entregador)
+  if (status === 'confirmada') await garantirDocumento(ctx, data as string).catch(() => null)
   return sucesso(data as string, d.id ? 'Locação atualizada' : 'Locação registrada')
 }
 
@@ -83,6 +86,7 @@ export async function mudarStatus(id: string, status: 'confirmada' | 'cancelada'
   const { error, count } = await ctx.supabase.from('locacoes').update({ status }, { count: 'exact' }).eq('id', id)
   if (error) return falha(ctx, error)
   if (!count) return { ok: false, erro: 'Locação não encontrada ou sem permissão.' }
+  if (status === 'confirmada') await garantirDocumento(ctx, id).catch(() => null)
   const msg = { confirmada: 'Reserva confirmada', cancelada: 'Locação cancelada', orcamento: 'Voltou para orçamento' }[status]
   return sucesso(undefined, msg)
 }

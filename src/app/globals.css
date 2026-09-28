@@ -229,3 +229,10 @@ a.card{color:inherit;text-decoration:none}
 .brand a{color:inherit;text-decoration:none}
 .voltar{display:inline-flex;align-items:center;gap:4px;font-weight:700;margin-bottom:12px;text-decoration:none}
 .page-h{font-size:1.5rem;font-weight:800}
+/* Contrato e assinatura */
+.pad{background:#fff;border-radius:14px;border:2px dashed var(--line);touch-action:none;width:100%;height:220px;display:block}
+.docbar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+.docbar .btn{flex:1 1 auto}
+.docframe{width:100%;border:1px solid var(--line);border-radius:12px;background:#fff;display:block;min-height:480px}
+.assin-lista{display:grid;gap:6px;margin:0 0 14px}
+.assin-lista .row{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px}

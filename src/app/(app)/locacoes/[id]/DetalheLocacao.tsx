@@ -20,9 +20,10 @@ interface Props {
   pagamentos: LancamentoCaixa[]
   vistorias: Vistoria[]
   locadora: { nome: string; pix: string | null }
+  contratoAssinado: boolean
 }
 
-export function DetalheLocacao({ l, pagamentos, vistorias, locadora }: Props) {
+export function DetalheLocacao({ l, pagamentos, vistorias, locadora, contratoAssinado }: Props) {
   const router = useRouter()
   const { papel } = useSessao()
   const { executar, erro, pendente } = useAcao()
@@ -67,7 +68,12 @@ export function DetalheLocacao({ l, pagamentos, vistorias, locadora }: Props) {
         <Status s={l.status} />
         <span className="muted">Contrato {num}</span>
       </div>
-      {proximo && <div className="acts" style={{ margin: '0 0 12px' }}>{proximo}</div>}
+      <div className="acts" style={{ margin: '0 0 12px' }}>
+        {proximo}
+        {l.status !== 'orcamento' && l.status !== 'cancelada' && (
+          <Link className="btn yellow" href={`/locacoes/${l.id}/documento`}>Contrato e termo{contratoAssinado ? ' ✓' : ''}</Link>
+        )}
+      </div>
       <Erro msg={folha ? '' : erro} />
 
       <div className="blk">
@@ -196,7 +202,7 @@ export function DetalheLocacao({ l, pagamentos, vistorias, locadora }: Props) {
       </Folha>
       <Folha titulo={folha === 'retirada' ? 'Registrar retirada' : 'Registrar entrega'} aberta={folha === 'entrega' || folha === 'retirada'} onFechar={() => setFolha(null)}>
         {(folha === 'entrega' || folha === 'retirada') && (
-          <FormVistoria l={l} fase={folha} saldo={verValores ? sd : 0} onPagar={() => setFolha('pagar')} onFim={() => setFolha(null)} />
+          <FormVistoria l={l} fase={folha} saldo={verValores ? sd : 0} contratoAssinado={contratoAssinado} onPagar={() => setFolha('pagar')} onFim={() => setFolha(null)} />
         )}
       </Folha>
     </>
@@ -238,7 +244,7 @@ function FormPagamento({ l, saldo, num, onFim }: { l: LocacaoCompleta; saldo: nu
   )
 }
 
-function FormVistoria({ l, fase, saldo, onPagar, onFim }: { l: LocacaoCompleta; fase: VistoriaFase; saldo: number; onPagar: () => void; onFim: () => void }) {
+function FormVistoria({ l, fase, saldo, contratoAssinado, onPagar, onFim }: { l: LocacaoCompleta; fase: VistoriaFase; saldo: number; contratoAssinado: boolean; onPagar: () => void; onFim: () => void }) {
   const { executar, erro, pendente } = useAcao()
   const { papel } = useSessao()
   return (
@@ -250,6 +256,11 @@ function FormVistoria({ l, fase, saldo, onPagar, onFim }: { l: LocacaoCompleta; 
         executar(() => registrarVistoria(l.id, fase, itens, String(fd.get('obs') ?? '')), onFim)
       }}
     >
+      {fase === 'entrega' && !contratoAssinado && (
+        <div className="note">
+          O contrato ainda não foi assinado. <Link className="lnk" href={`/locacoes/${l.id}/documento`}>Colher assinaturas</Link>
+        </div>
+      )}
       {fase === 'retirada' && saldo > 0.004 && (
         <div className="warn">
           Ainda falta receber {brl(saldo)}.{' '}

@@ -30,6 +30,7 @@ export const CHECK = {
     'Brinquedos montados e ancorados',
     'Soprador e energia testados',
     'Regras de uso explicadas ao responsável',
+    'Contrato e termo assinados',
   ],
   retirada: [
     'Brinquedos conferidos, sem avarias',
