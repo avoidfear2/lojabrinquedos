@@ -12,8 +12,9 @@ export interface BlocoTermos {
 /** Lê conteudo/termos-<versão>.md e converte um markdown simples (títulos, parágrafos, listas). */
 export async function lerTermos(versao = TERMOS_VERSAO) {
   const bruto = await readFile(path.join(process.cwd(), 'conteudo', `termos-v${versao}.md`), 'utf8').catch(() => '')
-  const pendente = !bruto || bruto.includes('<!-- PENDENTE')
   const semComentarios = bruto.replace(/<!--[\s\S]*?-->/g, '')
+  // Pendente: arquivo ausente, marcado como PENDENTE ou com campos [EM MAIÚSCULAS] a preencher
+  const pendente = !bruto || bruto.includes('<!-- PENDENTE') || /\[[A-ZÁÉÍÓÚÂÊÔÃÕÇ/ \-]{3,}\]/.test(semComentarios)
   const blocos: BlocoTermos[] = []
   for (const par of semComentarios.split(/\n\s*\n/)) {
     const t = par.trim()

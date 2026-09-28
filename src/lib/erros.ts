@@ -41,5 +41,22 @@ export function traduzErro(e: unknown, podeGravar = true): string {
   if (/User already registered|already been registered/i.test(m)) return 'Este e-mail já tem conta.'
   if (/Password should be at least/i.test(m)) return 'A senha precisa ter pelo menos 8 caracteres.'
   if (/rate limit/i.test(m)) return 'Muitas tentativas seguidas. Aguarde alguns minutos e tente de novo.'
+  if (/secret API key/i.test(m)) {
+    return 'Configuração: a chave secreta (sb_secret_…) foi usada no navegador. Em NEXT_PUBLIC_SUPABASE_ANON_KEY vai a publishable key (sb_publishable_…).'
+  }
+  if (/Invalid API key|No API key|apikey/i.test(m)) {
+    return 'Configuração: a chave do Supabase não foi aceita. Confira NEXT_PUBLIC_SUPABASE_ANON_KEY na Vercel e faça um novo deploy.'
+  }
+  if (/Failed to fetch|fetch failed|NetworkError|Load failed|ERR_NAME_NOT_RESOLVED/i.test(m)) {
+    return 'Não foi possível conectar ao Supabase. Verifique a internet e, se persistir, confira NEXT_PUBLIC_SUPABASE_URL na Vercel.'
+  }
   return 'Não foi possível salvar. Verifique a conexão e tente de novo.'
+}
+
+/** Erros de login e cadastro: quando não há tradução, mostra o detalhe técnico para facilitar o suporte. */
+export function traduzErroAuth(e: unknown): string {
+  const t = traduzErro(e)
+  if (!t.startsWith('Não foi possível salvar')) return t
+  const m = (e as ErroBanco | null)?.message ?? String(e ?? '')
+  return `Não foi possível entrar. Detalhe: ${m || 'erro desconhecido'}`
 }

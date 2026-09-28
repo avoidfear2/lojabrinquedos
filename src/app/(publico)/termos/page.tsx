@@ -8,7 +8,7 @@ export default async function Termos() {
   return (
     <>
       <p className="muted" style={{ marginTop: 0 }}>Versão {versao}</p>
-      {pendente && <div className="banner info">Texto definitivo ainda não publicado.</div>}
+      {pendente && <div className="banner info">Versão preliminar: ainda faltam informações neste texto.</div>}
       <article className="termos">
         {blocos.map((b, i) =>
           b.tipo === 'h1' ? <h2 key={i}>{b.texto}</h2> : b.tipo === 'h2' ? <h2 key={i}>{b.texto}</h2> : b.tipo === 'li' ? <p key={i}>• {b.texto}</p> : <p key={i}>{b.texto}</p>,
